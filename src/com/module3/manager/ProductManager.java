@@ -1,21 +1,23 @@
 package com.module3.manager;
 
-import com.module3.entity.Product;
-import com.module3.model.ConstStatus;
-import com.module3.model.Mess;
+import com.module3.model.Message;
 import com.module3.model.WarningMess;
-import com.module3.repository.Impl.RepositoryImpl;
+import com.module3.service.Impl.ProductServiceImpl;
 import com.module3.util.Console;
 import com.module3.util.Font.PrintForm;
 
-import java.util.List;
-
 public class ProductManager implements Manager{
+    private ProductServiceImpl productService;
+
+    public ProductManager() {
+        this.productService = new ProductServiceImpl();
+    }
+
     @Override
     public void display() {
         try{
             do {
-                Mess.welcome();
+                WarningMess.welcome();
                 System.out.println("******************PRODUCT MANAGEMENT****************");
                 System.out.println("1. Danh sách sản phẩm");
                 System.out.println("2. Thêm mới sản phẩmn");
@@ -23,31 +25,30 @@ public class ProductManager implements Manager{
                 System.out.println("4. Tìm kiếm sản phẩm");
                 System.out.println("5. Cập nhật trạng thái sản phẩm");
                 System.out.println("6. Thoát");
-                Mess.choice();
+                System.out.println(Message.choice);
                 int choice = Integer.parseInt(Console.scanner.nextLine());
                 switch (choice){
                     case 1:
-                        RepositoryImpl<Product> productRepository = new RepositoryImpl<>();
-                        List<Product> productList = productRepository.fìndAllByPagination(Product.class,10);
-                        productList.stream().forEach(p -> System.out.printf("%s | %s | %s | %s | %s | %s | %s \n",p.getProductId(),p.getProductName(),p.getManufacturer(),p.getCreated(),p.getBatch(),p.getQuantity(),p.getProductStatus() == ConstStatus.ProductStt.ACTIVE ? "Hoạt động":"Không hoạt động"));
-                        System.out.printf("");
+                        productService.listAll();
                         break;
                     case 2:
-
+                        productService.create();
                         break;
                     case 3:
-
+                        productService.update();
                         break;
                     case 4:
-
+                        System.out.println("Nhập vào sản phẩm muốn tìm");
+                        String key = Console.scanner.nextLine();
+                        productService.search(key);
                         break;
                     case 5:
-
+                        productService.updateStatus();
                         break;
                     case 6:
                         return;
                     default:
-                        PrintForm.warning(WarningMess.choice.failure);
+                        WarningMess.choiceFailure();
                 }
             }while (true);
         }catch (NumberFormatException nfe){

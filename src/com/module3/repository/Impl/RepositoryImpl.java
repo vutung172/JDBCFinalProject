@@ -1,9 +1,9 @@
 package com.module3.repository.Impl;
 
+import com.module3.model.WarningMess;
 import com.module3.repository.Repository;
-import com.module3.util.Annotation.Column;
-import com.module3.util.Annotation.Id;
-import com.module3.util.Annotation.Table;
+import com.module3.util.Annotation.*;
+import com.module3.util.Font.PrintForm;
 import com.module3.util.MySqlConnect.MySQLConnect;
 
 import java.lang.reflect.Field;
@@ -16,8 +16,9 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class RepositoryImpl<T> implements Repository<T> {
+
     @Override
-    public List<T> fìndAllByPagination(Class<T> entityClass, Integer pageNumber) {
+    public List<T> findAllByPagination(Class<T> entityClass, Integer pageNumber) {
         List<T> result = new ArrayList<>();
         try  (Connection conn = new MySQLConnect().getConnection()) {
             if (pageNumber > 0){
@@ -62,8 +63,80 @@ public class RepositoryImpl<T> implements Repository<T> {
     public T findId(Class<T> entityClass, Object... keys) {
         try  (Connection conn = new MySQLConnect().getConnection()) {
             List<Field> keysField = getKey(entityClass);
-            String keysName = keysField.stream().map(f -> colName(f) + " = ?").collect(Collectors.joining(" AND "));
+            String keysName = keysField.stream().map(f -> colName(f) + " = ?").collect(Collectors.joining(" , "));
             String sql = MessageFormat.format("SELECT * FROM {0} WHERE {1}", tblName(entityClass), keysName);
+            System.out.println(sql);
+            PreparedStatement ps = conn.prepareStatement(sql);
+            int index = 1;
+            for (Object key : keys)
+                ps.setObject(index++, key);
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                T entity = readResultSet(rs, entityClass);
+                return entity;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    @Override
+    public List<T> findByIndexes(Class<T> entityClass, String any) {
+        List<T> result = new ArrayList<>();
+        try  (Connection conn = new MySQLConnect().getConnection()) {
+            List<Field> keysField = getIndexes(entityClass);
+            String keysName = keysField.stream().map(f -> colName(f) + " LIKE concat('%',?,'%')").collect(Collectors.joining(" OR "));
+                String sql = MessageFormat.format("SELECT * FROM {0} WHERE {1}", tblName(entityClass), keysName);
+                System.out.println(sql);
+                PreparedStatement ps = conn.prepareStatement(sql);
+                for (int i = 1; i <= keysField.size(); i++)
+                    ps.setObject(i, any);
+                ResultSet rs = ps.executeQuery();
+                while (rs.next()) {
+                    T entity = readResultSet(rs, entityClass);
+                    result.add(entity);
+                }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return result;
+    }
+
+    @Override
+    public List<T> findByIndexesPagination(Class<T> entityClass, String any, Integer pageNumber) {
+        List<T> result = new ArrayList<>();
+        try  (Connection conn = new MySQLConnect().getConnection()) {
+            List<Field> keysField = getIndexes(entityClass);
+            String keysName = keysField.stream().map(f -> colName(f) + " LIKE concat('%',?,'%')").collect(Collectors.joining(" OR "));
+            if (pageNumber > 0) {
+                int offset = (pageNumber-1)*10;
+                String sql = MessageFormat.format("SELECT * FROM {0} WHERE {1} LIMIT 10 OFFSET {2}", tblName(entityClass), keysName, offset);
+                System.out.println(sql);
+                PreparedStatement ps = conn.prepareStatement(sql);
+                for (int i = 1; i <= keysField.size(); i++)
+                    ps.setObject(i, any);
+                ResultSet rs = ps.executeQuery();
+                while (rs.next()) {
+                    T entity = readResultSet(rs, entityClass);
+                    result.add(entity);
+                }
+            }else {
+                PrintForm.warning("page error");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return result;
+    }
+
+    @Override
+    public T authenticator(Class<T> entityClass, Object... keys) {
+        try  (Connection conn = new MySQLConnect().getConnection()) {
+            List<Field> authsField = getAuth(entityClass);
+            String authsName = authsField.stream().map(f -> colName(f) + " = ?").collect(Collectors.joining(" AND "));
+            String sql = MessageFormat.format("SELECT * FROM {0} WHERE {1}", tblName(entityClass), authsName);
             System.out.println(sql);
             PreparedStatement ps = conn.prepareStatement(sql);
             int index = 1;
@@ -180,6 +253,12 @@ public class RepositoryImpl<T> implements Repository<T> {
                 .filter(f -> Objects.nonNull(f.getAnnotation(Column.class)))
                 .collect(Collectors.toList());
     }
+    private List<Field> getIndexes(Class<T> entityClass) {
+        Field[] fields = entityClass.getDeclaredFields();
+        return Arrays.stream(fields)
+                .filter(f -> Objects.nonNull(f.getAnnotation(Index.class)))
+                .collect(Collectors.toList());
+    }
     private List<Field> getColumnsIgnoreKey(Class<T> entityClass) {
         List<Field> fields = getColumns(entityClass);
         return fields.stream()
@@ -190,6 +269,12 @@ public class RepositoryImpl<T> implements Repository<T> {
         List<Field> fields = getColumns(entityClass);
         return fields.stream()
                 .filter(f -> Objects.nonNull(f.getAnnotation(Id.class)))
+                .collect(Collectors.toList());
+    }
+    private List<Field> getAuth(Class<T> entityClass) {
+        List<Field> fields = getColumns(entityClass);
+        return fields.stream()
+                .filter(f -> Objects.nonNull(f.getAnnotation(Auth.class)))
                 .collect(Collectors.toList());
     }
 }

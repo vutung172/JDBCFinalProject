@@ -3,6 +3,7 @@ package com.module3.entity;
 import com.module3.model.ConstStatus;
 import com.module3.util.Annotation.Column;
 import com.module3.util.Annotation.Id;
+import com.module3.util.Annotation.Index;
 import com.module3.util.Annotation.Table;
 
 import java.util.Date;
@@ -10,8 +11,10 @@ import java.util.Date;
 @Table(name = "employees")
 public class Employee {
     @Id
+    @Index(name = "Emp_Id")
     @Column(name = "Emp_Id")
     private String employeeId;
+    @Index(name = "Emp_Name")
     @Column(name = "Emp_Name")
     private String employeeName;
     @Column(name = "Birth_Of_Date")

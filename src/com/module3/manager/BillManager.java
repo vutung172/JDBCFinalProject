@@ -1,6 +1,6 @@
 package com.module3.manager;
 
-import com.module3.model.Mess;
+import com.module3.model.Message;
 import com.module3.model.WarningMess;
 import com.module3.util.Console;
 import com.module3.util.Font.PrintForm;
@@ -10,7 +10,7 @@ public class BillManager implements Manager{
     public void display() {
         try{
             do {
-                Mess.welcome();
+                WarningMess.welcome();
                 System.out.println("******************QUẢN LÝ PHIẾU XUẤT****************");
                 System.out.println("1. Danh sách phiếu xuất");
                 System.out.println("2. Tạo phiếu xuất");
@@ -19,7 +19,7 @@ public class BillManager implements Manager{
                 System.out.println("5. Duyệt phiếu xuất");
                 System.out.println("6. Tìm kiếm phiếu xuất");
                 System.out.println("7. Thoát");
-                Mess.choice();
+                System.out.println(Message.choice);
                 int choice = Integer.parseInt(Console.scanner.nextLine());
                 switch (choice){
                     case 1:
@@ -43,7 +43,7 @@ public class BillManager implements Manager{
                     case 7:
                         return;
                     default:
-                        PrintForm.warning(WarningMess.choice.failure);
+                        WarningMess.choiceFailure();
                 }
             }while (true);
         }catch (NumberFormatException nfe){

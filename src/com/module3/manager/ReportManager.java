@@ -1,6 +1,6 @@
 package com.module3.manager;
 
-import com.module3.model.Mess;
+import com.module3.model.Message;
 import com.module3.model.WarningMess;
 import com.module3.util.Console;
 import com.module3.util.Font.PrintForm;
@@ -10,7 +10,7 @@ public class ReportManager implements Manager{
     public void display() {
         try{
             do {
-                Mess.welcome();
+                WarningMess.welcome();
                 System.out.println("******************QUẢN LÝ BÁO CÁO****************");
                 System.out.println("1. Thống kê chi phí theo ngày, tháng, năm");
                 System.out.println("2. Thống kê chi phí theo khoảng thời gian");
@@ -22,7 +22,7 @@ public class ReportManager implements Manager{
                 System.out.println("8. Thống kê sản phẩm xuất nhiều nhất trong khoảng thời gian");
                 System.out.println("9. Thống kê sản phẩm xuất ít nhất trong khoảng thời gian");
                 System.out.println("10. Thoát");
-                Mess.choice();
+                System.out.println(Message.choice);
                 int choice = Integer.parseInt(Console.scanner.nextLine());
                 switch (choice){
                     case 1:
@@ -52,7 +52,7 @@ public class ReportManager implements Manager{
                     case 10:
                         return;
                     default:
-                        PrintForm.warning(WarningMess.choice.failure);
+                        WarningMess.choiceFailure();
                 }
             }while (true);
         }catch (NumberFormatException nfe){

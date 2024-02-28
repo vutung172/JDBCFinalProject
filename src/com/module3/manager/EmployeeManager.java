@@ -1,6 +1,6 @@
 package com.module3.manager;
 
-import com.module3.model.Mess;
+import com.module3.model.Message;
 import com.module3.model.WarningMess;
 import com.module3.util.Console;
 import com.module3.util.Font.PrintForm;
@@ -10,7 +10,7 @@ public class EmployeeManager implements Manager{
     public void display() {
         try{
             do {
-                Mess.welcome();
+                WarningMess.welcome();
                 System.out.println("******************EMPLOYEE MANAGEMENT****************");
                 System.out.println("1. Danh sách nhân viên");
                 System.out.println("2. Thêm mới nhân viên");
@@ -19,7 +19,7 @@ public class EmployeeManager implements Manager{
                 System.out.println("5. Quản lý phiếu xuất");
                 System.out.println("5. Tìm kiếm nhân viên");
                 System.out.println("6. Thoát");
-                Mess.choice();
+                System.out.println(Message.choice);
                 int choice = Integer.parseInt(Console.scanner.nextLine());
                 switch (choice){
                     case 1:
@@ -40,7 +40,7 @@ public class EmployeeManager implements Manager{
                     case 6:
                         return;
                     default:
-                        PrintForm.warning(WarningMess.choice.failure);
+                        WarningMess.choiceFailure();
                 }
             }while (true);
         }catch (NumberFormatException nfe){

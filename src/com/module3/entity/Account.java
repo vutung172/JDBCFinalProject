@@ -2,18 +2,20 @@ package com.module3.entity;
 
 import com.module3.model.ConstStatus;
 import com.module3.model.PermissionType;
+import com.module3.util.Annotation.Auth;
 import com.module3.util.Annotation.Column;
 import com.module3.util.Annotation.Id;
 import com.module3.util.Annotation.Table;
 
 @Table(name = "accounts")
 public class Account {
+    @Id
     @Column(name = "Acc_id")
     private Integer accId;
-    @Id
+    @Auth
     @Column(name = "User_name")
     private String userName;
-    @Id
+    @Auth
     @Column(name = "Password")
     private String password;
     @Column(name = "Permission")

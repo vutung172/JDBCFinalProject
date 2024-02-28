@@ -2,6 +2,7 @@ package com.module3.entity;
 
 import com.module3.util.Annotation.Column;
 import com.module3.util.Annotation.Id;
+import com.module3.util.Annotation.Index;
 import com.module3.util.Annotation.Table;
 
 import java.util.Date;
@@ -11,6 +12,7 @@ public class Product {
     @Id
     @Column(name = "Product_Id")
     private String productId;
+    @Index(name = "Product_Name")
     @Column(name = "Product_Name")
     private String productName;
     @Column(name = "Manufacturer")

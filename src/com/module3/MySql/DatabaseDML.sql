@@ -46,6 +46,4 @@ DELIMITER ;
 
 CALL Insert100FakeProducts();
 
-SELECT * FROM products
-LIMIT 10
-OFFSET 10;
+SELECT * FROM products WHERE Product_Name LIKE '%sản p%' LIMIT 10 OFFSET 0;

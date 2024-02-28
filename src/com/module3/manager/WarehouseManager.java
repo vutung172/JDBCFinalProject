@@ -1,17 +1,18 @@
 package com.module3.manager;
 
 
-import com.module3.model.Mess;
+import com.module3.model.Message;
 import com.module3.model.WarningMess;
 import com.module3.util.Console;
 import com.module3.util.Font.PrintForm;
+import com.mysql.cj.protocol.WriterWatcher;
 
 public class WarehouseManager implements Manager{
     @Override
     public void display() {
         try{
             do {
-                Mess.welcome();
+                WarningMess.welcome();
                 System.out.println("******************WAREHOUSE MANAGEMENT****************");
                 System.out.println("1. Quản lý sản phẩm");
                 System.out.println("2. Quản lý nhân viên");
@@ -20,7 +21,7 @@ public class WarehouseManager implements Manager{
                 System.out.println("5. Quản lý phiếu xuất");
                 System.out.println("6. Quản lý báo cáo");
                 System.out.println("7. Thoát");
-                Mess.choice();
+                System.out.println(Message.choice);
                 int choice = Integer.parseInt(Console.scanner.nextLine());
                 switch (choice){
                     case 1:
@@ -50,7 +51,7 @@ public class WarehouseManager implements Manager{
                     case 7:
                         return;
                     default:
-                        PrintForm.warning(WarningMess.choice.failure);
+                        WarningMess.choiceFailure();
                 }
             }while (true);
         }catch (NumberFormatException nfe){
