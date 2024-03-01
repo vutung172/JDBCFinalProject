@@ -2,6 +2,7 @@ package com.module3.entity;
 
 import com.module3.util.Annotation.Column;
 import com.module3.util.Annotation.Id;
+import com.module3.util.Annotation.Index;
 import com.module3.util.Annotation.Table;
 
 import java.util.Date;
@@ -9,8 +10,10 @@ import java.util.Date;
 @Table(name = "bills")
 public class Bill {
     @Id
+    @Index(name = "Bill_id")
     @Column(name = "Bill_id")
     private Long billId;
+    @Index(name = "Bill_Code")
     @Column(name = "Bill_Code")
     private String billCode;
     @Column(name = "Bill_Type")
@@ -24,12 +27,12 @@ public class Bill {
     @Column(name = "Auth_date")
     private Date authDate;
     @Column(name = "Bill_Status")
-    private Byte billStatus;
+    private Integer billStatus;
 
     public Bill() {
     }
 
-    public Bill(Long billId, String billCode, Boolean billType, String employeeIdCreated, Date created, String employeeIdAuth, Date authDate, Byte billStatus) {
+    public Bill(Long billId, String billCode, Boolean billType, String employeeIdCreated, Date created, String employeeIdAuth, Date authDate, Integer billStatus) {
         this.billId = billId;
         this.billCode = billCode;
         this.billType = billType;
@@ -96,11 +99,11 @@ public class Bill {
         this.authDate = authDate;
     }
 
-    public Byte getBillStatus() {
+    public Integer getBillStatus() {
         return billStatus;
     }
 
-    public void setBillStatus(Byte billStatus) {
+    public void setBillStatus(Integer billStatus) {
         this.billStatus = billStatus;
     }
 }

@@ -5,11 +5,12 @@ import com.module3.util.Storage.UserStorage;
 
 public class WarningMess {
     public static void welcome(){
-        System.out.printf("Xin chào %s | Quyền hạn: %s \n", UserStorage.currentUserName, UserStorage.currentPermission);
+        System.out.printf("Xin chào %s | Quyền hạn: %s \n", UserStorage.currentUserName, UserStorage.currentPermission.equals(PermissionType.USER)?"User" : UserStorage.currentPermission.equals(PermissionType.ADMIN) ? "Admin": "Chưa được phân quyền");
     }
     public static void listEmpty(){
         PrintForm.attention("Danh sách hiện chưa có dữ liệu nào");
     }
+    public static void dataNotFound(){PrintForm.warning("Từ khóa bạn tìm kiếm không có kết quả phù hợp");}
     public static void objectNotExist(){
         PrintForm.warning("Đối tượng cần tìm không tồn tại");
     }
@@ -23,9 +24,12 @@ public class WarningMess {
         PrintForm.warning("Tạo thất bại");
     }
     public static void updateSuccess(){
-        PrintForm.warning("Cập nhật thành công");
+        PrintForm.success("Cập nhật thành công");
     }
     public static void updateFailure(){
         PrintForm.warning("Cập nhật thất bại");
+    }
+    public static void outOfRange(){
+        PrintForm.warning("Số lượng vượt quá giới hạn cho phép");
     }
 }

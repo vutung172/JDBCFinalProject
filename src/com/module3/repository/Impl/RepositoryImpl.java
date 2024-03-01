@@ -1,11 +1,16 @@
 package com.module3.repository.Impl;
 
+import com.module3.MySql.Views.View;
+import com.module3.entity.Account;
+import com.module3.entity.BillDetail;
+import com.module3.entity.Employee;
 import com.module3.model.WarningMess;
 import com.module3.repository.Repository;
 import com.module3.util.Annotation.*;
 import com.module3.util.Font.PrintForm;
 import com.module3.util.MySqlConnect.MySQLConnect;
 
+import java.beans.Statement;
 import java.lang.reflect.Field;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -82,6 +87,104 @@ public class RepositoryImpl<T> implements Repository<T> {
     }
 
     @Override
+    public T add(T entity) {
+        try (Connection conn = new MySQLConnect().getConnection()) {
+            List<Field> fields = getColumns((Class<T>) entity.getClass());
+            String columns = fields.stream().map(this::colName).collect(Collectors.joining(","));
+            String values = fields.stream().map(f -> "?").collect(Collectors.joining(","));
+            String sql = MessageFormat.format("INSERT INTO {0}({1}) VALUES ({2})", tblName((Class<T>) entity.getClass()), columns, values);
+            System.out.println(sql);
+            PreparedStatement ps = conn.prepareStatement(sql);
+            int index = 1;
+            for(Field f : fields) {
+                f.setAccessible(true);
+                ps.setObject(index++, f.get(entity));
+            }
+            ps.executeUpdate();
+
+            return entity;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    @Override
+    public T addIgnoreId(T entity) {
+        try (Connection conn = new MySQLConnect().getConnection()) {
+            List<Field> fields = getColumnsIgnoreKey((Class<T>) entity.getClass());
+            List<Field> keyFields = getKey((Class<T>) entity.getClass());
+            String columns = fields.stream().map(this::colName).collect(Collectors.joining(","));
+            String values = fields.stream().map(f -> "?").collect(Collectors.joining(","));
+            String sql = MessageFormat.format("INSERT INTO {0}({1}) VALUES ({2})", tblName((Class<T>) entity.getClass()), columns, values);
+            System.out.println(sql);
+            PreparedStatement ps = conn.prepareStatement(sql,Statement.RETURN_GENERATED_KEYS);
+            int index = 1;
+            for(Field f : fields) {
+                f.setAccessible(true);
+                ps.setObject(index++, f.get(entity));
+            }
+            ps.executeUpdate();
+            ResultSet generatedKey = ps.getGeneratedKeys();
+            for (Field field : keyFields) {
+                field.setAccessible(true);
+                    field.set(entity, rs.getObject(colName(field)));
+                }
+            }
+            System.out.println(generatedKey);
+            return entity;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    @Override
+    public T edit(T entity) {
+        try (Connection conn = new MySQLConnect().getConnection()) {
+            List<Field> updateFields = getColumnsIgnoreKey((Class<T>) entity.getClass());
+            List<Field> keyFields = getKey((Class<T>) entity.getClass());
+            String columns = updateFields.stream().map(f -> colName(f) + " = ?").collect(Collectors.joining(","));
+            String key = keyFields.stream().map(f -> colName(f) + " = ?").collect(Collectors.joining(","));
+            String sql = MessageFormat.format("UPDATE {0} SET {1} WHERE {2}", tblName((Class<T>) entity.getClass()), columns, key);
+            PreparedStatement ps = conn.prepareStatement(sql);
+            int index = 1;
+            for(Field f : updateFields) {
+                f.setAccessible(true);
+                ps.setObject(index++, f.get(entity));
+            }
+            for(Field f : keyFields) {
+                f.setAccessible(true);
+                ps.setObject(index++, f.get(entity));
+            }
+            ps.executeUpdate();
+            return entity;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    @Override
+    public boolean remove(Class<T> entityClass, Object... keys) {
+        try  (Connection conn = new MySQLConnect().getConnection()) {
+            List<Field> keysField = getKey(entityClass);
+            String keysName = keysField.stream().map(f -> colName(f) + " = ?").collect(Collectors.joining(","));
+            String sql = MessageFormat.format("DELETE FROM {0} WHERE {1}", tblName(entityClass), keysName);
+            System.out.println(sql);
+            PreparedStatement ps = conn.prepareStatement(sql);
+            int index = 1;
+            for (Object key : keys)
+                ps.setObject(index++, key);
+            ps.executeUpdate();
+            return true;
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        return false;
+    }
+
+    @Override
     public List<T> findByIndexes(Class<T> entityClass, String any) {
         List<T> result = new ArrayList<>();
         try  (Connection conn = new MySQLConnect().getConnection()) {
@@ -132,6 +235,34 @@ public class RepositoryImpl<T> implements Repository<T> {
     }
 
     @Override
+    public T findByIndexName(Class<T> entityClass, String any) {
+        return null;
+    }
+
+    @Override
+    public List<T> findByIndexesInView(Class<T> entityClass, String any, String viewName) {
+        List<T> result = new ArrayList<>();
+        try  (Connection conn = new MySQLConnect().getConnection()) {
+            List<Field> keysField = getIndexes(entityClass);
+            String keysName = keysField.stream().map(f -> colName(f) + " = ?").collect(Collectors.joining(" OR "));
+            String sql = MessageFormat.format("SELECT * FROM {0} WHERE {1}", viewName, keysName);
+            System.out.println(sql);
+            PreparedStatement ps = conn.prepareStatement(sql);
+            for (int i = 1; i <= keysField.size(); i++)
+                ps.setObject(i, any);
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                T entity = readResultSet(rs,entityClass);
+                result.add(entity);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return result;
+    }
+
+    @Override
     public T authenticator(Class<T> entityClass, Object... keys) {
         try  (Connection conn = new MySQLConnect().getConnection()) {
             List<Field> authsField = getAuth(entityClass);
@@ -151,74 +282,6 @@ public class RepositoryImpl<T> implements Repository<T> {
             e.printStackTrace();
         }
         return null;
-    }
-
-    @Override
-    public T add(T entity) {
-        try (Connection conn = new MySQLConnect().getConnection()) {
-            List<Field> fields = getColumns((Class<T>) entity.getClass());
-            String columns = fields.stream().map(this::colName).collect(Collectors.joining(","));
-            String values = fields.stream().map(f -> "?").collect(Collectors.joining(","));
-            String sql = MessageFormat.format("INSERT INTO {0}({1}) VALUES ({2})", tblName((Class<T>) entity.getClass()), columns, values);
-            System.out.println(sql);
-            PreparedStatement ps = conn.prepareStatement(sql);
-            int index = 1;
-            for(Field f : fields) {
-                f.setAccessible(true);
-                ps.setObject(index++, f.get(entity));
-            }
-            ps.executeUpdate();
-            return entity;
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
-
-    @Override
-    public T edit(T entity) {
-        try (Connection conn = new MySQLConnect().getConnection()) {
-            List<Field> updateFields = getColumnsIgnoreKey((Class<T>) entity.getClass());
-            List<Field> keyFields = getKey((Class<T>) entity.getClass());
-
-            String columns = updateFields.stream().map(f -> colName(f) + " = ?").collect(Collectors.joining(","));
-            String key = keyFields.stream().map(f -> colName(f) + " = ?").collect(Collectors.joining(","));
-            String sql = MessageFormat.format("UPDATE {0} SET {1} WHERE {2}", tblName((Class<T>) entity.getClass()), columns, key);
-            PreparedStatement ps = conn.prepareStatement(sql);
-            int index = 1;
-            for(Field f : updateFields) {
-                f.setAccessible(true);
-                ps.setObject(index++, f.get(entity));
-            }
-            for(Field f : keyFields) {
-                f.setAccessible(true);
-                ps.setObject(index++, f.get(entity));
-            }
-            ps.executeUpdate();
-            return entity;
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
-
-    @Override
-    public boolean remove(Class<T> entityClass, Object... keys) {
-        try  (Connection conn = new MySQLConnect().getConnection()) {
-            List<Field> keysField = getKey(entityClass);
-            String keysName = keysField.stream().map(f -> colName(f) + " = ?").collect(Collectors.joining(","));
-            String sql = MessageFormat.format("DELETE FROM {0} WHERE {1}", tblName(entityClass), keysName);
-            System.out.println(sql);
-            PreparedStatement ps = conn.prepareStatement(sql);
-            int index = 1;
-            for (Object key : keys)
-                ps.setObject(index++, key);
-            ps.executeUpdate();
-            return true;
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
-        return false;
     }
 
     private T readResultSet(ResultSet rs, Class<T> clazz) throws Exception {
@@ -258,6 +321,12 @@ public class RepositoryImpl<T> implements Repository<T> {
         return Arrays.stream(fields)
                 .filter(f -> Objects.nonNull(f.getAnnotation(Index.class)))
                 .collect(Collectors.toList());
+    }
+    private String indexName(Field field) {
+        Index index = field.getAnnotation(Index.class);
+        if (Objects.nonNull(index))
+            return index.name();
+        return null;
     }
     private List<Field> getColumnsIgnoreKey(Class<T> entityClass) {
         List<Field> fields = getColumns(entityClass);

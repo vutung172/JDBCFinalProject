@@ -1,12 +1,13 @@
-package com.module3.manager;
+package com.module3.manager.Impl;
 
+import com.module3.manager.Manager;
 import com.module3.model.Message;
 import com.module3.model.WarningMess;
 import com.module3.service.Impl.ProductServiceImpl;
 import com.module3.util.Console;
 import com.module3.util.Font.PrintForm;
 
-public class ProductManager implements Manager{
+public class ProductManager implements Manager {
     private ProductServiceImpl productService;
 
     public ProductManager() {
@@ -18,7 +19,7 @@ public class ProductManager implements Manager{
         try{
             do {
                 WarningMess.welcome();
-                System.out.println("******************PRODUCT MANAGEMENT****************");
+                System.out.println("******************QUẢN LÝ SẢN PHẨM****************");
                 System.out.println("1. Danh sách sản phẩm");
                 System.out.println("2. Thêm mới sản phẩmn");
                 System.out.println("3. Cập nhật sản phẩm");

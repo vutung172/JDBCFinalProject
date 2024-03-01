@@ -1,12 +1,19 @@
-package com.module3.manager;
+package com.module3.manager.Impl;
 
 
+import com.module3.manager.Manager;
 import com.module3.model.Message;
 import com.module3.model.WarningMess;
+import com.module3.service.Impl.AccountServiceImpl;
 import com.module3.util.Console;
-import com.module3.util.Font.PrintForm;
 
-public class AccountManager implements Manager{
+public class AccountManager implements Manager {
+    private AccountServiceImpl accountService;
+
+    public AccountManager() {
+        this.accountService = new AccountServiceImpl();
+    }
+
     @Override
     public void display() {
         try{
@@ -22,20 +29,18 @@ public class AccountManager implements Manager{
                 int choice = Integer.parseInt(Console.scanner.nextLine());
                 switch (choice){
                     case 1:
-                        ProductManager productManager = new ProductManager();
-                        productManager.display();
+                        accountService.listAll();
                         break;
                     case 2:
-                        EmployeeManager employeeManager = new EmployeeManager();
-                        employeeManager.display();
+                        accountService.create();
                         break;
                     case 3:
-                        AccountManager accountManager = new AccountManager();
-                        accountManager.display();
+                        accountService.update();
                         break;
                     case 4:
-                        ReceiptManager receiptManager = new ReceiptManager();
-                        receiptManager.display();
+                        System.out.println("Nhập vào tên tài khoản hoặc tên nhân viên muốn tìm: ");
+                        String key = Console.scanner.nextLine();
+                        accountService.search(key);
                         break;
                     case 5:
                         return;

@@ -2,6 +2,7 @@ package com.module3.entity;
 
 import com.module3.util.Annotation.Column;
 import com.module3.util.Annotation.Id;
+import com.module3.util.Annotation.Index;
 import com.module3.util.Annotation.Table;
 
 @Table(name = "bill_details")
@@ -9,6 +10,7 @@ public class BillDetail {
     @Id
     @Column(name = "Bill_Detail_Id")
     private Long billDetailId;
+    @Index(name = "Bill_Id")
     @Column(name = "Bill_Id")
     private Long billId;
     @Column(name = "Product_Id")

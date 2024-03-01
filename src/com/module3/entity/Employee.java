@@ -26,12 +26,12 @@ public class Employee {
     @Column(name = "Address")
     private String address;
     @Column(name = "Emp_Status")
-    private Byte employeeStatus;
+    private Integer employeeStatus;
 
     public Employee() {
     }
 
-    public Employee(String employeeId, String employeeName, Date dateOfBirth, String email, String phone, String address, Byte employeeStatus) {
+    public Employee(String employeeId, String employeeName, Date dateOfBirth, String email, String phone, String address, Integer employeeStatus) {
         this.employeeId = employeeId;
         this.employeeName = employeeName;
         this.dateOfBirth = dateOfBirth;
@@ -89,11 +89,11 @@ public class Employee {
         this.address = address;
     }
 
-    public Byte getEmployeeStatus() {
+    public Integer getEmployeeStatus() {
         return employeeStatus;
     }
 
-    public void setEmployeeStatus(Byte employeeStatus) {
+    public void setEmployeeStatus(Integer employeeStatus) {
         this.employeeStatus = employeeStatus;
     }
 }

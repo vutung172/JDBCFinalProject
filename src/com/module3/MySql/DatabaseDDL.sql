@@ -20,6 +20,8 @@ CREATE TABLE employees(
     Address text not null ,
     Emp_Status smallint not null
 );
+ALTER TABLE employees
+MODIFY COLUMN Emp_Name nvarchar(100);
 
 CREATE TABLE accounts(
     Acc_id int primary key AUTO_INCREMENT,

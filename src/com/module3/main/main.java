@@ -1,11 +1,9 @@
 package com.module3.main;
 
 import com.module3.entity.Account;
-import com.module3.manager.WarehouseManager;
-import com.module3.manager.WarehouseUserManager;
+import com.module3.manager.Impl.WarehouseManager;
+import com.module3.manager.Impl.WarehouseUserManager;
 import com.module3.model.PermissionType;
-import com.module3.repository.Impl.RepositoryImpl;
-import com.module3.service.AccountService;
 import com.module3.service.Impl.AccountServiceImpl;
 import com.module3.util.Console;
 import com.module3.util.Font.PrintForm;
@@ -15,14 +13,12 @@ public class main {
     public static void main(String[] args) {
 
         do {
-            AccountService accountService = new AccountServiceImpl();
-            RepositoryImpl<Account> accountRepository = new RepositoryImpl<>();
+            AccountServiceImpl accountService = new AccountServiceImpl();
             System.out.println("Nhập vào tên đăng nhập");
             String userName = Console.scanner.nextLine();
             System.out.println("Nhập vào mã đăng nhập");
             String password = Console.scanner.nextLine();
-            /*Account loginAcc = accountService.login(userName,password);*/
-            Account loginAcc = accountRepository.authenticator(Account.class,userName,password);
+            Account loginAcc = accountService.login(userName,password);
             if (loginAcc != null){
                 UserStorage.accountId = loginAcc.getAccId();
                 UserStorage.currentUserName = loginAcc.getUserName();

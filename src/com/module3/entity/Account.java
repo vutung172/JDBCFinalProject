@@ -2,10 +2,7 @@ package com.module3.entity;
 
 import com.module3.model.ConstStatus;
 import com.module3.model.PermissionType;
-import com.module3.util.Annotation.Auth;
-import com.module3.util.Annotation.Column;
-import com.module3.util.Annotation.Id;
-import com.module3.util.Annotation.Table;
+import com.module3.util.Annotation.*;
 
 @Table(name = "accounts")
 public class Account {
@@ -13,6 +10,7 @@ public class Account {
     @Column(name = "Acc_id")
     private Integer accId;
     @Auth
+    @Index(name = "User_Name")
     @Column(name = "User_name")
     private String userName;
     @Auth
@@ -20,6 +18,7 @@ public class Account {
     private String password;
     @Column(name = "Permission")
     private Boolean permission;
+    @Index(name = "Emp_id")
     @Column(name = "Emp_id")
     private String employeeId;
     @Column(name = "Acc_status")

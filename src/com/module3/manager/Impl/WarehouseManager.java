@@ -1,13 +1,12 @@
-package com.module3.manager;
+package com.module3.manager.Impl;
 
 
+import com.module3.manager.Manager;
 import com.module3.model.Message;
 import com.module3.model.WarningMess;
 import com.module3.util.Console;
-import com.module3.util.Font.PrintForm;
-import com.mysql.cj.protocol.WriterWatcher;
 
-public class WarehouseManager implements Manager{
+public class WarehouseManager implements Manager {
     @Override
     public void display() {
         try{
