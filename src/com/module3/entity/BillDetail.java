@@ -13,6 +13,7 @@ public class BillDetail {
     @Index(name = "Bill_Id")
     @Column(name = "Bill_Id")
     private Long billId;
+    @Index(name = "Product_Id")
     @Column(name = "Product_Id")
     private String productId;
     @Column(name = "Quantity")

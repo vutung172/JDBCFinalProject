@@ -1,51 +1,21 @@
 package com.module3.repository.Impl;
 
-import com.module3.MySql.Views.View;
-import com.module3.entity.Account;
-import com.module3.entity.BillDetail;
-import com.module3.entity.Employee;
-import com.module3.model.WarningMess;
 import com.module3.repository.Repository;
 import com.module3.util.Annotation.*;
 import com.module3.util.Font.PrintForm;
 import com.module3.util.MySqlConnect.MySQLConnect;
 
-import java.beans.Statement;
 import java.lang.reflect.Field;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.Statement;
 import java.text.MessageFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.stream.Collectors;
 
 public class RepositoryImpl<T> implements Repository<T> {
-
-    @Override
-    public List<T> findAllByPagination(Class<T> entityClass, Integer pageNumber) {
-        List<T> result = new ArrayList<>();
-        try  (Connection conn = new MySQLConnect().getConnection()) {
-            if (pageNumber > 0){
-                int offset = (pageNumber-1)*10;
-                String sql = MessageFormat.format("SELECT * FROM {0} LIMIT 10 OFFSET {1}", tblName(entityClass), offset);
-                System.out.println(sql);
-                PreparedStatement ps = conn.prepareStatement(sql);
-                ResultSet rs = ps.executeQuery();
-                rs.getFetchSize();
-                while (rs.next()) {
-                    T entity = readResultSet(rs, entityClass);
-                    result.add(entity);
-                }
-            } else {
-                System.err.println("page error");
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return result;
-    }
-
     @Override
     public List<T> findAll(Class<T> entityClass) {
         List<T> result = new ArrayList<>();
@@ -113,7 +83,7 @@ public class RepositoryImpl<T> implements Repository<T> {
     public T addIgnoreId(T entity) {
         try (Connection conn = new MySQLConnect().getConnection()) {
             List<Field> fields = getColumnsIgnoreKey((Class<T>) entity.getClass());
-            List<Field> keyFields = getKey((Class<T>) entity.getClass());
+            List<Field> keyfields = getKey((Class<T>) entity.getClass());
             String columns = fields.stream().map(this::colName).collect(Collectors.joining(","));
             String values = fields.stream().map(f -> "?").collect(Collectors.joining(","));
             String sql = MessageFormat.format("INSERT INTO {0}({1}) VALUES ({2})", tblName((Class<T>) entity.getClass()), columns, values);
@@ -125,13 +95,13 @@ public class RepositoryImpl<T> implements Repository<T> {
                 ps.setObject(index++, f.get(entity));
             }
             ps.executeUpdate();
-            ResultSet generatedKey = ps.getGeneratedKeys();
-            for (Field field : keyFields) {
-                field.setAccessible(true);
-                    field.set(entity, rs.getObject(colName(field)));
+            ResultSet rs = ps.getGeneratedKeys();
+            while (rs.next()){
+                for (Field field : keyfields) {
+                    field.setAccessible(true);
+                    field.set(entity, rs.getLong(1));
                 }
             }
-            System.out.println(generatedKey);
             return entity;
         } catch (Exception e) {
             e.printStackTrace();
@@ -185,21 +155,68 @@ public class RepositoryImpl<T> implements Repository<T> {
     }
 
     @Override
+    public List<T> findAllByPagination(Class<T> entityClass, Integer pageNumber) {
+        List<T> result = new ArrayList<>();
+        try  (Connection conn = new MySQLConnect().getConnection()) {
+            if (pageNumber > 0){
+                int offset = (pageNumber-1)*10;
+                String sql = MessageFormat.format("SELECT * FROM {0} LIMIT 10 OFFSET {1}", tblName(entityClass), offset);
+                System.out.println(sql);
+                PreparedStatement ps = conn.prepareStatement(sql);
+                ResultSet rs = ps.executeQuery();
+                rs.getFetchSize();
+                while (rs.next()) {
+                    T entity = readResultSet(rs, entityClass);
+                    result.add(entity);
+                }
+            } else {
+                System.err.println("page error");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return result;
+    }
+
+    @Override
     public List<T> findByIndexes(Class<T> entityClass, String any) {
         List<T> result = new ArrayList<>();
         try  (Connection conn = new MySQLConnect().getConnection()) {
             List<Field> keysField = getIndexes(entityClass);
             String keysName = keysField.stream().map(f -> colName(f) + " LIKE concat('%',?,'%')").collect(Collectors.joining(" OR "));
-                String sql = MessageFormat.format("SELECT * FROM {0} WHERE {1}", tblName(entityClass), keysName);
-                System.out.println(sql);
-                PreparedStatement ps = conn.prepareStatement(sql);
-                for (int i = 1; i <= keysField.size(); i++)
-                    ps.setObject(i, any);
-                ResultSet rs = ps.executeQuery();
-                while (rs.next()) {
-                    T entity = readResultSet(rs, entityClass);
-                    result.add(entity);
-                }
+            String sql = MessageFormat.format("SELECT * FROM {0} WHERE {1}", tblName(entityClass), keysName);
+            System.out.println(sql);
+            PreparedStatement ps = conn.prepareStatement(sql);
+            for (int i = 1; i <= keysField.size(); i++)
+                ps.setObject(i, any);
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                T entity = readResultSet(rs, entityClass);
+                result.add(entity);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return result;
+    }
+
+    @Override
+    public List<T> findEqualByIndexes(Class<T> entityClass, String any) {
+        List<T> result = new ArrayList<>();
+        try  (Connection conn = new MySQLConnect().getConnection()) {
+            List<Field> keysField = getIndexes(entityClass);
+            String keysName = keysField.stream().map(f -> colName(f) + " = ?").collect(Collectors.joining(" OR "));
+            String sql = MessageFormat.format("SELECT * FROM {0} WHERE {1}", tblName(entityClass), keysName);
+            System.out.println(sql);
+            PreparedStatement ps = conn.prepareStatement(sql);
+            for (int i = 1; i <= keysField.size(); i++)
+                ps.setObject(i, any);
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                T entity = readResultSet(rs, entityClass);
+                result.add(entity);
+            }
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -284,6 +301,7 @@ public class RepositoryImpl<T> implements Repository<T> {
         return null;
     }
 
+    //Editor
     private T readResultSet(ResultSet rs, Class<T> clazz) throws Exception {
         T entity = clazz.getDeclaredConstructor().newInstance();
         List<Field> fields = getColumns(clazz);
@@ -346,4 +364,5 @@ public class RepositoryImpl<T> implements Repository<T> {
                 .filter(f -> Objects.nonNull(f.getAnnotation(Auth.class)))
                 .collect(Collectors.toList());
     }
+    //End-Editor
 }

@@ -12,6 +12,7 @@ public interface Repository<T> {
     //Thêm
     List<T> findAllByPagination(Class<T> entityClass,Integer pageNumber);
     List<T> findByIndexes(Class<T> entityClass, String any);
+    List<T> findEqualByIndexes(Class<T> entityClass, String any);
     List<T> findByIndexesPagination(Class<T> entityClass, String any,Integer pageNumber);
     T findByIndexName(Class<T> entityClass, String any);
     List<T> findByIndexesInView(Class<T> entityClass, String any,String viewName);

@@ -122,7 +122,7 @@ public class BillServiceImpl implements BillService<Bill> {
                 } while (!stop);
                 bill.setAuthDate(new Date());
                 bill.setBillStatus(ConstStatus.BillStt.CREATE);
-                Bill billSuccess = billRepository.add(bill);
+                Bill billSuccess = billRepository.addIgnoreId(bill);
                 if (billSuccess != null) {
                     BillDetail billDetail;
                     do {
@@ -179,34 +179,52 @@ public class BillServiceImpl implements BillService<Bill> {
                     int choice = Integer.parseInt(Console.scanner.nextLine());
                     if (updateBill.size() == 1) {
                         Bill bill = updateBill.stream().findFirst().orElse(null);
-                        switch (choice) {
-                            case 1:
-                                updateById(billType, bill.getBillId());
-                                break;
-                            case 2:
-                                billDetailService.updateFromBill(bill);
-                                break;
-                            case 3:
-                                billDetailService.create(bill);
-                                break;
-                            case 4:
-                                break;
-                            default:
-                                WarningMess.choiceFailure();
+                        if (!bill.getBillStatus().equals(ConstStatus.BillStt.APPROVAL)) {
+                            switch (choice) {
+                                case 1:
+                                    updateById(billType, bill.getBillId());
+                                    break;
+                                case 2:
+                                    billDetailService.updateFromBill(bill);
+                                    break;
+                                case 3:
+                                    billDetailService.create(bill);
+                                    break;
+                                case 4:
+                                    break;
+                                default:
+                                    WarningMess.choiceFailure();
+                            }
+                        } else {
+                            PrintForm.warning("Phiếu đã được duyệt");
                         }
                     } else {
                         switch (choice) {
                             case 1:
                                 System.out.println("Nhập mã của phiếu muốn cập nhật: ");
                                 long id = Long.parseLong(Console.scanner.nextLine());
-                                Bill update = updateById(billType, id);
+                                Bill bill = updateBill.stream().filter(b -> b.getBillId().equals(id)).findFirst().orElse(null);
+                                if (bill != null) {
+                                    if (!bill.getBillStatus().equals(ConstStatus.BillStt.APPROVAL)) {
+                                        updateById(billType, id);
+                                    } else {
+                                        PrintForm.warning("Phiếu đã được duyệt");
+                                    }
+                                } else {
+                                    WarningMess.objectNotExist();
+                                }
                                 break;
                             case 2:
                                 System.out.println("Nhập mã của phiếu muốn cập nhật: ");
                                 long id1 = Long.parseLong(Console.scanner.nextLine());
                                 Bill updateDetail = updateBill.stream().filter(b -> b.getBillId().equals(id1)).findFirst().orElse(null);
                                 if (updateDetail != null) {
-                                    billDetailService.updateFromBill(updateDetail);
+                                    if (!updateDetail.getBillStatus().equals(ConstStatus.BillStt.APPROVAL)) {
+                                        billDetailService.updateFromBill(updateDetail);
+                                    } else {
+                                        PrintForm.warning("Phiếu đã được duyệt");
+                                    }
+
                                 } else {
                                     WarningMess.objectNotExist();
                                 }
@@ -335,30 +353,36 @@ public class BillServiceImpl implements BillService<Bill> {
             do {
                 System.out.println("Mời bạn nhập mã phiếu hoặc mã code");
                 long billId = Long.parseLong(Console.scanner.nextLine());
-                billList = billRepository.findByIndexes(Bill.class, String.valueOf(billId));
+                billList = billRepository.findEqualByIndexes(Bill.class, String.valueOf(billId));
                 if (!billList.isEmpty()) {
                     Header.billDetails();
                     for (Bill bill : billList) {
                         if (bill.getBillType().equals(billType)) {
-                            billDetailService.search(billType, String.valueOf(bill.getBillId()));
+                            List<BillDetail> billDetails = billDetailRepository.findEqualByIndexes(BillDetail.class, String.valueOf(bill.getBillId()));
+                            billDetails.stream().forEach(bd -> System.out.printf(TableForm.billDetails.column,
+                                    bd.getBillId(),
+                                    bd.getBillDetailId(),
+                                    bd.getProductId(),
+                                    productRepository.findId(Product.class, bd.getProductId()).getProductName(),
+                                    bd.getQuantity(),
+                                    bd.getPrice()));
                         } else {
                             WarningMess.objectNotExist();
                         }
                     }
                     System.out.println("1. Cập nhật chi tiết phiếu");
                     System.out.println("2. Thoát");
+                    System.out.print(Message.choice);
                     int choice = Integer.parseInt(Console.scanner.nextLine());
                     switch (choice) {
                         case 1:
                             billDetailService.update(billType);
                             break;
-                        case 2:
+                        case 3:
                             break;
                         default:
                             WarningMess.choiceFailure();
                     }
-
-
                 } else {
                     WarningMess.objectNotExist();
                 }
@@ -397,19 +421,23 @@ public class BillServiceImpl implements BillService<Bill> {
                         updateBill = updateBills.stream().findFirst().orElse(null);
                         switch (choice) {
                             case 1:
-                                updateBill.setBillStatus(ConstStatus.BillStt.APPROVAL);
-                                if (billType.equals(BillType.IMPORT)) {
-                                    List<BillDetail> billDetails = billDetailService.search(BillType.IMPORT, String.valueOf(updateBill.getBillId()));
-                                    billDetails.forEach(bd -> {
-                                        Product updateProduct = productRepository.findId(Product.class, bd.getProductId());
-                                        updateProduct.setQuantity(updateProduct.getQuantity() + bd.getQuantity());
-                                    });
+                                if (!updateBill.getBillStatus().equals(ConstStatus.BillStt.APPROVAL)){
+                                    updateBill.setBillStatus(ConstStatus.BillStt.APPROVAL);
+                                    if (billType.equals(BillType.IMPORT)) {
+                                        List<BillDetail> billDetails = billDetailService.search(BillType.IMPORT, String.valueOf(updateBill.getBillId()));
+                                        billDetails.forEach(bd -> {
+                                            Product updateProduct = productRepository.findId(Product.class, bd.getProductId());
+                                            updateProduct.setQuantity(updateProduct.getQuantity() + bd.getQuantity());
+                                        });
+                                    } else {
+                                        List<BillDetail> billDetails = billDetailService.search(BillType.EXPORT, String.valueOf(updateBill.getBillId()));
+                                        billDetails.forEach(bd -> {
+                                            Product updateProduct = productRepository.findId(Product.class, bd.getProductId());
+                                            updateProduct.setQuantity(updateProduct.getQuantity() - bd.getQuantity());
+                                        });
+                                    }
                                 } else {
-                                    List<BillDetail> billDetails = billDetailService.search(BillType.EXPORT, String.valueOf(updateBill.getBillId()));
-                                    billDetails.forEach(bd -> {
-                                        Product updateProduct = productRepository.findId(Product.class, bd.getProductId());
-                                        updateProduct.setQuantity(updateProduct.getQuantity() - bd.getQuantity());
-                                    });
+                                    PrintForm.warning("Phiếu đã được duyệt");
                                 }
                                 break;
                             case 2:
@@ -424,7 +452,24 @@ public class BillServiceImpl implements BillService<Bill> {
                                 long id = Long.parseLong(Console.scanner.nextLine());
                                 updateBill = billRepository.findId(Bill.class, id);
                                 if (updateBill != null) {
-                                    updateBill.setBillStatus(ConstStatus.BillStt.APPROVAL);
+                                    if (!updateBill.getBillStatus().equals(ConstStatus.BillStt.APPROVAL)){
+                                        updateBill.setBillStatus(ConstStatus.BillStt.APPROVAL);
+                                        if (billType.equals(BillType.IMPORT)) {
+                                            List<BillDetail> billDetails = billDetailService.search(BillType.IMPORT, String.valueOf(updateBill.getBillId()));
+                                            billDetails.forEach(bd -> {
+                                                Product updateProduct = productRepository.findId(Product.class, bd.getProductId());
+                                                updateProduct.setQuantity(updateProduct.getQuantity() + bd.getQuantity());
+                                            });
+                                        } else {
+                                            List<BillDetail> billDetails = billDetailService.search(BillType.EXPORT, String.valueOf(updateBill.getBillId()));
+                                            billDetails.forEach(bd -> {
+                                                Product updateProduct = productRepository.findId(Product.class, bd.getProductId());
+                                                updateProduct.setQuantity(updateProduct.getQuantity() - bd.getQuantity());
+                                            });
+                                        }
+                                    } else {
+                                        PrintForm.warning("Phiếu nhập đã được duyệt");
+                                    }
                                 } else {
                                     WarningMess.objectNotExist();
                                 }
