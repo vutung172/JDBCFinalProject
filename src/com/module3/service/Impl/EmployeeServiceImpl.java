@@ -1,5 +1,6 @@
 package com.module3.service.Impl;
 
+import com.module3.entity.Account;
 import com.module3.entity.Employee;
 import com.module3.entity.Product;
 import com.module3.model.*;
@@ -13,6 +14,7 @@ import java.util.List;
 
 public class EmployeeServiceImpl implements GeneralService<Employee> {
     private RepositoryImpl<Employee> employeeRepository;
+    private RepositoryImpl<Account> accountRepository;
 
     public EmployeeServiceImpl() {
         this.employeeRepository = new RepositoryImpl<>();
@@ -219,7 +221,17 @@ public class EmployeeServiceImpl implements GeneralService<Employee> {
                         default:
                     }
                     if (set == 1 || set == 2) {
-
+                        List<Account> accounts = accountRepository.findEqualByIndexes(Account.class,updateStatusEmployee.getEmployeeId());
+                        accounts.forEach(a -> {
+                            a.setAccountStatus(ConstStatus.AccountStt.BLOCK);
+                            accountRepository.edit(a);
+                        });
+                    } else if (set == 3) {
+                        List<Account> accounts = accountRepository.findEqualByIndexes(Account.class,updateStatusEmployee.getEmployeeId());
+                        accounts.forEach(a -> {
+                            a.setAccountStatus(ConstStatus.AccountStt.ACTIVE);
+                            accountRepository.edit(a);
+                        });
                     }
                     System.out.println(Message.continuous);
                     String confirm = Console.scanner.nextLine();

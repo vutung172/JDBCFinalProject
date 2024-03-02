@@ -1,9 +1,6 @@
 package com.module3.entity;
 
-import com.module3.util.Annotation.Column;
-import com.module3.util.Annotation.Id;
-import com.module3.util.Annotation.Index;
-import com.module3.util.Annotation.Table;
+import com.module3.util.Annotation.*;
 
 import java.util.Date;
 
@@ -26,6 +23,7 @@ public class Bill {
     private String employeeIdAuth;
     @Column(name = "Auth_date")
     private Date authDate;
+    @Mark
     @Column(name = "Bill_Status")
     private Integer billStatus;
 

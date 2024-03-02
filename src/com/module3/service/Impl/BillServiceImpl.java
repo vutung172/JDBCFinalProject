@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class BillServiceImpl implements BillService<Bill> {
     private RepositoryImpl<Bill> billRepository;
@@ -98,6 +99,70 @@ public class BillServiceImpl implements BillService<Bill> {
     }
 
     @Override
+    public List<Bill> listAllByStatus(Boolean billType, Boolean permissionType) {
+        List<Bill> billList = new ArrayList<>();
+        try {
+            boolean stop = false;
+            do {
+                System.out.println("Nhập vào trạng thái phiếu muốn xem: ");
+                System.out.println("1. Tạo");
+                System.out.println("2. Hủy");
+                System.out.println("3. Duyệt");
+                System.out.println("4. Thoát");
+                System.out.print(Message.choice);
+                int choice = Integer.parseInt(Console.scanner.nextLine());
+                switch (choice){
+                    case 1:
+                        billList = billRepository.findByMark(Bill.class,ConstStatus.BillStt.CREATE);
+                        break;
+                    case 2:
+                        billList = billRepository.findByMark(Bill.class,ConstStatus.BillStt.CANCEL);
+                        break;
+                    case 3:
+                        billList = billRepository.findByMark(Bill.class,ConstStatus.BillStt.APPROVAL);
+                        break;
+                    case 4:
+                        stop = true;
+                        break;
+                    default:
+                        WarningMess.choiceFailure();
+                }
+                if (!billList.isEmpty()){
+                    if (permissionType.equals(PermissionType.ADMIN)){
+                        Header.bills();
+                        billList.stream().filter(b -> b.getBillType().equals(billType)).forEach(b -> System.out.printf(TableForm.bills.column,
+                                b.getBillId(),
+                                b.getBillCode(),
+                                b.getBillType().equals(BillType.IMPORT) ? "Phiếu nhập" : "Phiếu xuất",
+                                b.getEmployeeIdCreated(),
+                                b.getCreated(),
+                                b.getEmployeeIdAuth(),
+                                b.getAuthDate(),
+                                b.getBillStatus().equals(ConstStatus.BillStt.CREATE) ? "Tạo" : b.getBillStatus().equals(ConstStatus.BillStt.APPROVAL) ? "Duyệt" : "Hủy"));
+                    } else {
+                        Header.bills();
+                        billList.stream().filter(b -> b.getBillType().equals(billType)).filter(b -> b.getEmployeeIdCreated().equals(UserStorage.employeeId)).forEach(b -> System.out.printf(TableForm.bills.column,
+                                b.getBillId(),
+                                b.getBillCode(),
+                                b.getBillType().equals(BillType.IMPORT) ? "Phiếu nhập" : "Phiếu xuất",
+                                b.getEmployeeIdCreated(),
+                                b.getCreated(),
+                                b.getEmployeeIdAuth(),
+                                b.getAuthDate(),
+                                b.getBillStatus().equals(ConstStatus.BillStt.CREATE) ? "Tạo" : b.getBillStatus().equals(ConstStatus.BillStt.APPROVAL) ? "Duyệt" : "Hủy"));
+                    }
+                    System.out.println(Message.continuous);
+                    String confirm = Console.scanner.nextLine();
+                    stop = !confirm.contains("y");
+                }
+            }while (!stop);
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    @Override
     public Bill create(Boolean billType) {
         try (Connection connection = new MySQLConnect().getConnection()) {
             connection.setAutoCommit(false);
@@ -153,16 +218,21 @@ public class BillServiceImpl implements BillService<Bill> {
     }
 
     @Override
-    public boolean update(Boolean billType) {
+    public boolean update(Boolean billType,Boolean permissionType) {
+        List<Bill> updateBills = new ArrayList<>();
         try {
             boolean stop = false;
             do {
                 System.out.println("Nhập vào mã phiếu hoặc mã code muốn cập nhật: ");
                 String key = Console.scanner.nextLine();
-                List<Bill> updateBill = billRepository.findByIndexes(Bill.class, key);
-                if (!updateBill.isEmpty()) {
+                if (permissionType.equals(PermissionType.USER)) {
+                    updateBills = billRepository.findByIndexes(Bill.class, key).stream().filter(b -> b.getEmployeeIdCreated().equals(UserStorage.employeeId)).toList();
+                } else {
+                    updateBills = billRepository.findByIndexes(Bill.class, key);
+                }
+                if (!updateBills.isEmpty()) {
                     Header.bills();
-                    updateBill.stream().filter(b -> b.getBillType().equals(billType) && !b.getBillStatus().equals(ConstStatus.BillStt.APPROVAL)).forEach(b -> System.out.printf(TableForm.bills.column,
+                    updateBills.stream().filter(b -> b.getBillType().equals(billType) && !b.getBillStatus().equals(ConstStatus.BillStt.APPROVAL)).forEach(b -> System.out.printf(TableForm.bills.column,
                             b.getBillId(),
                             b.getBillCode(),
                             b.getBillType().equals(BillType.IMPORT) ? "Phiếu nhập" : "Phiếu xuất",
@@ -177,15 +247,15 @@ public class BillServiceImpl implements BillService<Bill> {
                     System.out.println("4. Thoát ");
                     System.out.print(Message.choice);
                     int choice = Integer.parseInt(Console.scanner.nextLine());
-                    if (updateBill.size() == 1) {
-                        Bill bill = updateBill.stream().findFirst().orElse(null);
+                    if (updateBills.size() == 1) {
+                        Bill bill = updateBills.stream().findFirst().orElse(null);
                         if (!bill.getBillStatus().equals(ConstStatus.BillStt.APPROVAL)) {
                             switch (choice) {
                                 case 1:
                                     updateById(billType, bill.getBillId());
                                     break;
                                 case 2:
-                                    billDetailService.updateFromBill(bill);
+                                    billDetailService.updateFromBill(bill,UserStorage.currentPermission);
                                     break;
                                 case 3:
                                     billDetailService.create(bill);
@@ -203,7 +273,7 @@ public class BillServiceImpl implements BillService<Bill> {
                             case 1:
                                 System.out.println("Nhập mã của phiếu muốn cập nhật: ");
                                 long id = Long.parseLong(Console.scanner.nextLine());
-                                Bill bill = updateBill.stream().filter(b -> b.getBillId().equals(id)).findFirst().orElse(null);
+                                Bill bill = updateBills.stream().filter(b -> b.getBillId().equals(id)).findFirst().orElse(null);
                                 if (bill != null) {
                                     if (!bill.getBillStatus().equals(ConstStatus.BillStt.APPROVAL)) {
                                         updateById(billType, id);
@@ -217,10 +287,10 @@ public class BillServiceImpl implements BillService<Bill> {
                             case 2:
                                 System.out.println("Nhập mã của phiếu muốn cập nhật: ");
                                 long id1 = Long.parseLong(Console.scanner.nextLine());
-                                Bill updateDetail = updateBill.stream().filter(b -> b.getBillId().equals(id1)).findFirst().orElse(null);
+                                Bill updateDetail = updateBills.stream().filter(b -> b.getBillId().equals(id1)).findFirst().orElse(null);
                                 if (updateDetail != null) {
                                     if (!updateDetail.getBillStatus().equals(ConstStatus.BillStt.APPROVAL)) {
-                                        billDetailService.updateFromBill(updateDetail);
+                                        billDetailService.updateFromBill(updateDetail,UserStorage.currentPermission);
                                     } else {
                                         PrintForm.warning("Phiếu đã được duyệt");
                                     }
@@ -304,7 +374,7 @@ public class BillServiceImpl implements BillService<Bill> {
     }
 
     @Override
-    public List<Bill> search(Boolean billType, String any) {
+    public List<Bill> search(Boolean billType,Boolean permissionType, String any) {
         try {
             List<Bill> billList = billRepository.findByIndexes(Bill.class, any);
             if (!billList.isEmpty()) {
@@ -324,7 +394,7 @@ public class BillServiceImpl implements BillService<Bill> {
                 int choice = Integer.parseInt(Console.scanner.nextLine());
                 switch (choice) {
                     case 1:
-                        update(billType);
+                        update(billType,UserStorage.currentPermission);
                         break;
                     case 2:
                         billApproval(billType);
@@ -376,7 +446,7 @@ public class BillServiceImpl implements BillService<Bill> {
                     int choice = Integer.parseInt(Console.scanner.nextLine());
                     switch (choice) {
                         case 1:
-                            billDetailService.update(billType);
+                            billDetailService.update(billType,UserStorage.currentPermission);
                             break;
                         case 3:
                             break;
@@ -424,13 +494,13 @@ public class BillServiceImpl implements BillService<Bill> {
                                 if (!updateBill.getBillStatus().equals(ConstStatus.BillStt.APPROVAL)){
                                     updateBill.setBillStatus(ConstStatus.BillStt.APPROVAL);
                                     if (billType.equals(BillType.IMPORT)) {
-                                        List<BillDetail> billDetails = billDetailService.search(BillType.IMPORT, String.valueOf(updateBill.getBillId()));
+                                        List<BillDetail> billDetails = billDetailService.search(BillType.IMPORT,UserStorage.currentPermission, String.valueOf(updateBill.getBillId()));
                                         billDetails.forEach(bd -> {
                                             Product updateProduct = productRepository.findId(Product.class, bd.getProductId());
                                             updateProduct.setQuantity(updateProduct.getQuantity() + bd.getQuantity());
                                         });
                                     } else {
-                                        List<BillDetail> billDetails = billDetailService.search(BillType.EXPORT, String.valueOf(updateBill.getBillId()));
+                                        List<BillDetail> billDetails = billDetailService.search(BillType.EXPORT,UserStorage.currentPermission, String.valueOf(updateBill.getBillId()));
                                         billDetails.forEach(bd -> {
                                             Product updateProduct = productRepository.findId(Product.class, bd.getProductId());
                                             updateProduct.setQuantity(updateProduct.getQuantity() - bd.getQuantity());
@@ -455,13 +525,13 @@ public class BillServiceImpl implements BillService<Bill> {
                                     if (!updateBill.getBillStatus().equals(ConstStatus.BillStt.APPROVAL)){
                                         updateBill.setBillStatus(ConstStatus.BillStt.APPROVAL);
                                         if (billType.equals(BillType.IMPORT)) {
-                                            List<BillDetail> billDetails = billDetailService.search(BillType.IMPORT, String.valueOf(updateBill.getBillId()));
+                                            List<BillDetail> billDetails = billDetailService.search(BillType.IMPORT,UserStorage.currentPermission, String.valueOf(updateBill.getBillId()));
                                             billDetails.forEach(bd -> {
                                                 Product updateProduct = productRepository.findId(Product.class, bd.getProductId());
                                                 updateProduct.setQuantity(updateProduct.getQuantity() + bd.getQuantity());
                                             });
                                         } else {
-                                            List<BillDetail> billDetails = billDetailService.search(BillType.EXPORT, String.valueOf(updateBill.getBillId()));
+                                            List<BillDetail> billDetails = billDetailService.search(BillType.EXPORT,UserStorage.currentPermission, String.valueOf(updateBill.getBillId()));
                                             billDetails.forEach(bd -> {
                                                 Product updateProduct = productRepository.findId(Product.class, bd.getProductId());
                                                 updateProduct.setQuantity(updateProduct.getQuantity() - bd.getQuantity());

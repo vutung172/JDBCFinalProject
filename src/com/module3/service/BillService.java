@@ -8,9 +8,10 @@ import java.util.List;
 
 public interface BillService<T> {
     List<T> listAll(Boolean billType);
+    List<T> listAllByStatus(Boolean billType, Boolean permissionType);
     T create(Boolean billType);
-    boolean update(Boolean billType);
-    List<T> search(Boolean billType,String any);
+    boolean update(Boolean billType, Boolean permissionType);
+    List<T> search(Boolean billType,Boolean permissionType, String any);
     List<T> billDetail(Boolean billType);
     T billApproval(Boolean billType);
 }

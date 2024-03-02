@@ -12,7 +12,7 @@ public class WarehouseManager implements Manager {
         try{
             do {
                 WarningMess.welcome();
-                System.out.println("******************WAREHOUSE MANAGEMENT****************");
+                System.out.println("******************QUẢN LÝ KHO****************");
                 System.out.println("1. Quản lý sản phẩm");
                 System.out.println("2. Quản lý nhân viên");
                 System.out.println("3. Quản lý tài khoản");

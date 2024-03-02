@@ -12,6 +12,7 @@ import com.module3.service.BillService;
 import com.module3.service.GeneralService;
 import com.module3.util.Console;
 import com.module3.util.MySqlConnect.MySQLConnect;
+import com.module3.util.Storage.UserStorage;
 
 import java.sql.Connection;
 import java.util.ArrayList;
@@ -34,16 +35,12 @@ public class BillDetailServiceImpl implements BillService<BillDetail> {
     }
 
     @Override
-    public BillDetail create(Boolean billType) {
-        try {
-            boolean stop = false;
-            System.out.println("Nhập");
-            do {
+    public List<BillDetail> listAllByStatus(Boolean billType, Boolean permissionType) {
+        return null;
+    }
 
-            } while (stop);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+    @Override
+    public BillDetail create(Boolean billType) {
         return null;
     }
 
@@ -95,23 +92,20 @@ public class BillDetailServiceImpl implements BillService<BillDetail> {
     }
 
     @Override
-    public boolean update(Boolean billType) {
-        try {
-            System.out.println("Nhập mã phiếu chi tiết muốn cập nhật: ");
-            long billDetailId = Long.parseLong(Console.scanner.nextLine());
-            BillDetail updateBillDetail = billDetailRepository.findId(BillDetail.class, billDetailId);
-            if (updateBillDetail != null) {
-                System.out.println("");
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+    public boolean update(Boolean billType, Boolean permissionType) {
+
         return false;
     }
 
-    public boolean updateFromBill(Bill bill) {
+    public boolean updateFromBill(Bill bill,Boolean permissionType) {
         List<BillDetail> billDetailList;
         try {
+            if (permissionType.equals(PermissionType.USER)){
+                if (!bill.getEmployeeIdCreated().equals(UserStorage.employeeId)){
+                    WarningMess.objectNotExist();
+                    return false;
+                }
+            }
             if (bill != null) {
                 billDetailList = billDetailRepository.findByIndexesInView(BillDetail.class, String.valueOf(bill.getBillId()), View.billToBillDetail);
                 if (!billDetailList.isEmpty()) {
@@ -171,7 +165,7 @@ public class BillDetailServiceImpl implements BillService<BillDetail> {
     }
 
     @Override
-    public List<BillDetail> search(Boolean billType, String any) {
+    public List<BillDetail> search(Boolean billType,Boolean permissionType, String any) {
         List<BillDetail> billDetails = new ArrayList<>();
         try {
             billDetails = billDetailRepository.findByIndexes(BillDetail.class, any);

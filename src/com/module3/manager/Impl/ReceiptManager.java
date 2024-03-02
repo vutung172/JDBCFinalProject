@@ -7,6 +7,7 @@ import com.module3.model.WarningMess;
 import com.module3.service.Impl.BillServiceImpl;
 import com.module3.util.Console;
 import com.module3.util.Font.PrintForm;
+import com.module3.util.Storage.UserStorage;
 
 public class ReceiptManager implements Manager {
     private BillServiceImpl billService;
@@ -38,7 +39,7 @@ public class ReceiptManager implements Manager {
                         billService.create(BillType.IMPORT);
                         break;
                     case 3:
-                        billService.update(BillType.IMPORT);
+                        billService.update(BillType.IMPORT,UserStorage.currentPermission);
                         break;
                     case 4:
                         billService.billDetail(BillType.IMPORT);
@@ -49,7 +50,7 @@ public class ReceiptManager implements Manager {
                     case 6:
                         System.out.println("Nhập vào mã phiếu hoặc mã code cần tìm");
                         String key = Console.scanner.nextLine();
-                        billService.search(BillType.IMPORT,key);
+                        billService.search(BillType.IMPORT, UserStorage.currentPermission,key);
                         break;
                     case 7:
                         return;

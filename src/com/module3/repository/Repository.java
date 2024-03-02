@@ -16,5 +16,7 @@ public interface Repository<T> {
     List<T> findByIndexesPagination(Class<T> entityClass, String any,Integer pageNumber);
     T findByIndexName(Class<T> entityClass, String any);
     List<T> findByIndexesInView(Class<T> entityClass, String any,String viewName);
+    List<T> findByMark(Class<T> entityClass, Object... targets);
+
     T authenticator(Class<T> entityClass, Object... keys);
 }

@@ -5,6 +5,7 @@ import com.module3.util.Annotation.*;
 import com.module3.util.Font.PrintForm;
 import com.module3.util.MySqlConnect.MySQLConnect;
 
+import java.lang.annotation.Target;
 import java.lang.reflect.Field;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -280,6 +281,29 @@ public class RepositoryImpl<T> implements Repository<T> {
     }
 
     @Override
+    public List<T> findByMark(Class<T> entityClass, Object... targets) {
+        List<T> result  = new ArrayList<>();
+        try  (Connection conn = new MySQLConnect().getConnection()) {
+            List<Field> keysField = getMark(entityClass);
+            String keysName = keysField.stream().map(f -> colName(f) + " = ?").collect(Collectors.joining(" AND "));
+            String sql = MessageFormat.format("SELECT * FROM {0} WHERE {1}", tblName(entityClass), keysName);
+            System.out.println(sql);
+            PreparedStatement ps = conn.prepareStatement(sql);
+            int index = 1;
+            for (Object key : targets)
+                ps.setObject(index++, key);
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                T entity = readResultSet(rs, entityClass);
+                result.add(entity) ;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return result;
+    }
+
+    @Override
     public T authenticator(Class<T> entityClass, Object... keys) {
         try  (Connection conn = new MySQLConnect().getConnection()) {
             List<Field> authsField = getAuth(entityClass);
@@ -362,6 +386,12 @@ public class RepositoryImpl<T> implements Repository<T> {
         List<Field> fields = getColumns(entityClass);
         return fields.stream()
                 .filter(f -> Objects.nonNull(f.getAnnotation(Auth.class)))
+                .collect(Collectors.toList());
+    }
+    private List<Field> getMark(Class<T> entityClass) {
+        List<Field> fields = getColumns(entityClass);
+        return fields.stream()
+                .filter(f -> Objects.nonNull(f.getAnnotation(Mark.class)))
                 .collect(Collectors.toList());
     }
     //End-Editor
