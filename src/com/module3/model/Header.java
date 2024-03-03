@@ -12,8 +12,8 @@ public class Header {
     }
     public static void billDetails(){
         System.out.printf(TableForm.billDetails.column,
-                "Mã phiếu chi tiết",
                 "Mã phiếu",
+                "Mã phiếu chi tiết",
                 "Mã sản phẩm",
                 "Số lượng",
                 "Giá");

@@ -93,7 +93,11 @@ public class BillDetailServiceImpl implements BillService<BillDetail> {
 
     @Override
     public boolean update(Boolean billType, Boolean permissionType) {
-
+        try{
+            System.out.println("Nhập vào mã phiếu chi tiết muốn cập nhật");
+        } catch (Exception e){
+            e.printStackTrace();
+        }
         return false;
     }
 
@@ -114,8 +118,8 @@ public class BillDetailServiceImpl implements BillService<BillDetail> {
                     billDetailList.forEach(bd -> System.out.printf(TableForm.billDetails.column,
                             bd.getBillId(),
                             bd.getBillDetailId(),
-                            bd.getProductId(),
-                            productRepository.findId(Product.class, bd.getQuantity()).getProductName(),
+                            productRepository.findId(Product.class, bd.getProductId()).getProductName(),
+                            bd.getQuantity(),
                             bd.getPrice()));
                     System.out.println("1. Cập nhật chi tiết phiếu");
                     System.out.println("2. Thoát");
@@ -175,8 +179,8 @@ public class BillDetailServiceImpl implements BillService<BillDetail> {
                 billDetails.forEach(bd -> System.out.printf(TableForm.billDetails.column,
                         bd.getBillId(),
                         bd.getBillDetailId(),
-                        bd.getProductId(),
-                        productRepository.findId(Product.class, bd.getQuantity()).getProductName(),
+                        productRepository.findId(Product.class, bd.getProductId()).getProductName(),
+                        bd.getQuantity(),
                         bd.getPrice()));
             } else {
                 WarningMess.dataNotFound();

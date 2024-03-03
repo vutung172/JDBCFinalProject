@@ -17,6 +17,10 @@ public class WarningMess {
     public static void choiceFailure() {
         PrintForm.warning("Lựa chọn không phù hợp mời chọn lại !");
     }
+    public static void dateFormatFailure() {
+        PrintForm.warning("Định dạng ngày tháng không phù hợp");
+    }
+
     public static void createdSuccess(){
         PrintForm.success("Tạo thành công !!!");
     }

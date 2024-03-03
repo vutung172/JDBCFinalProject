@@ -1,12 +1,22 @@
 package com.module3.manager.Impl;
 
 import com.module3.manager.Manager;
+import com.module3.model.BillType;
+import com.module3.model.GeneralType;
 import com.module3.model.Message;
 import com.module3.model.WarningMess;
+import com.module3.service.Impl.ReportServiceImpl;
+import com.module3.service.ReportService;
 import com.module3.util.Console;
 import com.module3.util.Font.PrintForm;
 
 public class ReportManager implements Manager {
+    private ReportServiceImpl reportService;
+
+    public ReportManager() {
+        this.reportService = new ReportServiceImpl();
+    }
+
     @Override
     public void display() {
         try{
@@ -27,28 +37,31 @@ public class ReportManager implements Manager {
                 int choice = Integer.parseInt(Console.scanner.nextLine());
                 switch (choice){
                     case 1:
-
+                        reportService.statisticByTime(BillType.IMPORT);
                         break;
                     case 2:
-
+                        reportService.statisticByPeriod(BillType.IMPORT);
                         break;
                     case 3:
-
+                        reportService.statisticByTime(BillType.EXPORT);
                         break;
                     case 4:
-
+                        reportService.statisticByPeriod(BillType.EXPORT);
                         break;
                     case 5:
-
+                        reportService.statisticEmployee();
                         break;
                     case 6:
-
+                        reportService.statisticProduct(BillType.IMPORT, GeneralType.sort.decrease);
                         break;
                     case 7:
+                        reportService.statisticProduct(BillType.IMPORT, GeneralType.sort.increase);
                         break;
                     case 8:
+                        reportService.statisticProduct(BillType.EXPORT, GeneralType.sort.decrease);
                         break;
                     case 9:
+                        reportService.statisticProduct(BillType.EXPORT, GeneralType.sort.increase);
                         break;
                     case 10:
                         return;

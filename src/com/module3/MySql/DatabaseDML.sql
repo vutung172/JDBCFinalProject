@@ -58,3 +58,15 @@ JOIN bill_details ON bills.Bill_id = bill_details.Bill_Id;
 CREATE VIEW vw_billDetails_products AS
     SELECT  Bill_Id, Bill_Detail_Id,  bill_details.Product_Id AS Product_ID, bill_details.Quantity AS Quantity, Price, Product_Name, Manufacturer, Created, Batch, products.Quantity AS Total_Quantity, Product_Status FROM bill_details
 JOIN products ON bill_details.Product_Id = products.Product_Id;
+
+DELIMITER //
+CREATE PROCEDURE statitics_by_date(IN billType bit, IN date varchar(10),OUT expense float)
+BEGIN
+    SELECT sum(bill_details.Price*bill_details.Quantity) FROM bills
+        JOIN bill_details ON bills.Bill_id = bill_details.Bill_Id
+    WHERE Bill_Type = true AND Bill_Status = 2
+    GROUP BY bills.Created
+    HAVING YEAR(bills.Created) = ?
+    ;
+end //
+DELIMITER :
