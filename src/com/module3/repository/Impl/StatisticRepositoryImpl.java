@@ -1,6 +1,7 @@
 package com.module3.repository.Impl;
 
 import com.module3.entity.Product;
+import com.module3.model.DateTimeFormat;
 import com.module3.repository.StatisticRepository;
 import com.module3.util.MySqlConnect.MySQLConnect;
 
@@ -8,8 +9,9 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.text.MessageFormat;
+import java.util.Date;
 
-public class StatisticRepositoryImpl implements StatisticRepository {
+public class StatisticRepositoryImpl implements StatisticRepository,DateTimeFormat {
     @Override
     public float statisticByDate(boolean billType, String date) {
         float sum = 0;
@@ -18,11 +20,14 @@ public class StatisticRepositoryImpl implements StatisticRepository {
                     "SELECT sum(bill_details.Price*bill_details.Quantity) FROM bills\n" +
                             "    JOIN bill_details ON bills.Bill_id = bill_details.Bill_Id\n" +
                             "    WHERE Bill_Type = {0} AND Bill_Status = 2\n" +
-                            "    GROUP BY bills.Created\n" +
-                            "    HAVING DATE(bills.Created) = ?", billType);
-            System.out.println(sql);
+                            "    GROUP BY bills.Auth_date\n" +
+                            "    HAVING DATE(bills.Auth_date) = ?", billType);
+
             PreparedStatement ps = conn.prepareStatement(sql);
-            ps.setObject(1,date);
+            Date dateConfirmed = DateTimeFormat.super.checkerDateFormater(date);
+            if (dateConfirmed != null){
+                ps.setObject(1,DateTimeFormat.super.dateTransferToDB(dateConfirmed));
+            }
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
                 sum = sum +rs.getFloat(1);
@@ -41,9 +46,9 @@ public class StatisticRepositoryImpl implements StatisticRepository {
                     "SELECT sum(bill_details.Price*bill_details.Quantity) FROM bills\n" +
                     " JOIN bill_details ON bills.Bill_id = bill_details.Bill_Id\n" +
                     " WHERE Bill_Type = {0} AND Bill_Status = 2\n" +
-                    " GROUP BY bills.Created\n" +
-                    " HAVING MONTH(bills.Created) = ? AND YEAR(bills.Created) = ?", billType);
-            System.out.println(sql);
+                    " GROUP BY bills.Auth_Created\n" +
+                    " HAVING MONTH(bills.Auth_date) = ? AND YEAR(bills.Auth_date) = ?", billType);
+
             PreparedStatement ps = conn.prepareStatement(sql);
             ps.setObject(1,month);
             ps.setObject(2,year);
@@ -65,9 +70,9 @@ public class StatisticRepositoryImpl implements StatisticRepository {
                     "SELECT sum(bill_details.Price*bill_details.Quantity) FROM bills\n" +
                     " JOIN bill_details ON bills.Bill_id = bill_details.Bill_Id\n" +
                     " WHERE Bill_Type = {0} AND Bill_Status = 2\n" +
-                    " GROUP BY bills.Created\n" +
-                    " HAVING YEAR(bills.Created) = ?", billType);
-            System.out.println(sql);
+                    " GROUP BY bills.Auth_date\n" +
+                    " HAVING YEAR(bills.Auth_date) = ?", billType);
+
             PreparedStatement ps = conn.prepareStatement(sql);
             ps.setObject(1,year);
             ResultSet rs = ps.executeQuery();
@@ -88,12 +93,16 @@ public class StatisticRepositoryImpl implements StatisticRepository {
                     "SELECT sum(bill_details.Price*bill_details.Quantity) FROM bills\n" +
                             " JOIN bill_details ON bills.Bill_id = bill_details.Bill_Id\n" +
                             " WHERE Bill_Type = {0} AND Bill_Status = 2\n" +
-                            " GROUP BY bills.Created\n" +
-                            " HAVING DATE(bills.Created) BETWEEN = ?  AND = ? ", billType);
-            System.out.println(sql);
+                            " GROUP BY bills.Auth_date\n" +
+                            " HAVING DATE(bills.Auth_date) BETWEEN  ?  AND  ? ", billType);
+
             PreparedStatement ps = conn.prepareStatement(sql);
-            ps.setObject(1,startDate);
-            ps.setObject(2,endDate);
+            Date start = DateTimeFormat.super.checkerDateFormater(startDate);
+            Date end = DateTimeFormat.super.checkerDateFormater(endDate);
+            if (start != null && end != null) {
+                ps.setObject(1, DateTimeFormat.super.dateTransferToDB(start));
+                ps.setObject(2, DateTimeFormat.super.dateTransferToDB(end));
+            }
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
                 sum = sum +rs.getFloat(1);
@@ -111,14 +120,18 @@ public class StatisticRepositoryImpl implements StatisticRepository {
                     "SELECT Product_Id,sum(bill_details.Quantity) AS total FROM bills " +
                             "    JOIN bill_details ON bills.Bill_id = bill_details.Bill_Id " +
                             "    WHERE Bill_Type = {0} AND Bill_Status = 2 " +
-                            "    GROUP BY bill_details.Product_Id,bills.Created " +
-                            "    HAVING DATE(bills.Created) BETWEEN ? AND ? " +
+                            "    GROUP BY bill_details.Product_Id,bills.Auth_date " +
+                            "    HAVING DATE(bills.Auth_date) BETWEEN ? AND ? " +
                             "    Order BY total {1} " +
                             "    LIMIT 1",billType,sortType);
-            System.out.println(sql);
+
             PreparedStatement ps = conn.prepareStatement(sql);
-            ps.setObject(1,startDate);
-            ps.setObject(2,endDate);
+            Date start = DateTimeFormat.super.checkerDateFormater(startDate);
+            Date end = DateTimeFormat.super.checkerDateFormater(endDate);
+            if (start != null && end != null) {
+                ps.setObject(1, DateTimeFormat.super.dateTransferToDB(start));
+                ps.setObject(2, DateTimeFormat.super.dateTransferToDB(end));
+            }
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
                 return rs.getString(1);
@@ -136,7 +149,6 @@ public class StatisticRepositoryImpl implements StatisticRepository {
             String sql = MessageFormat.format(
                     "SELECT count(Emp_Id) FROM employees " +
                     "WHERE Emp_Status = {0}",employeeStatus);
-            System.out.println(sql);
             PreparedStatement ps = conn.prepareStatement(sql);
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {

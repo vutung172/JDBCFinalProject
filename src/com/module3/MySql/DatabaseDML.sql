@@ -17,34 +17,17 @@ DROP PROCEDURE account_authenticator;
 
 call account_authenticator('tungvu','12345',@accID,@user,@empId,@permission,@accStatus);
 
-DELIMITER //
-CREATE PROCEDURE Insert100FakeProducts()
-BEGIN
-    DECLARE i INT DEFAULT 1;
-
-    WHILE i <= 100 DO
-            INSERT INTO products (
-                Product_Id,
-                Product_Name,
-                Manufacturer,
-                Batch,
-                Quantity,
-                Product_Status
-            ) VALUES (
-                         CONCAT('P', LPAD(i, 4, '0')),
-                         CONCAT('Sản phẩm ', i),
-                         CONCAT('Nhà sản xuất ', i),
-                         FLOOR(RAND() * 100) + 1,
-                         FLOOR(RAND() * 1000),
-                         i % 2
-                     );
-
-            SET i = i + 1;
-        END WHILE;
-END; //
-DELIMITER ;
-
-CALL Insert100FakeProducts();
+INSERT INTO employees (Emp_Id, Emp_Name, Birth_Of_Date, Email, Phone, Address, Emp_Status)
+SELECT
+    CONCAT(CHAR(65 + FLOOR(RAND() * 26)), SUBSTRING(MD5(RAND()) FROM 1 FOR 4)) as Emp_Id,
+    CONCAT('Employee ', SUBSTRING(MD5(RAND()) FROM 1 FOR 5)) as Emp_Name,
+    DATE_ADD('1989-01-01', INTERVAL FLOOR(RAND() * 4383) DAY) as Birth_Of_Date,
+    CONCAT('Employee', SUBSTRING(MD5(RAND()) FROM 1 FOR 5), '@mpv.com') as Email,
+    CONCAT('0', FLOOR(8 + RAND() * 2), FLOOR(RAND() * 1000000000)) as Phone,
+    CASE WHEN RAND() > 0.5 THEN 'Hanoi' ELSE 'HoChiMinh' END as Address,
+    FLOOR(RAND() * 3) as Emp_Status
+FROM
+    information_schema.tables LIMIT 100;
 
 CREATE VIEW vw_accounts_employees AS
 SELECT acc_id, user_name, password, permission, accounts.emp_id as Emp_Id, acc_status, emp_name, birth_of_date, email, phone, address, emp_status
@@ -59,14 +42,9 @@ CREATE VIEW vw_billDetails_products AS
     SELECT  Bill_Id, Bill_Detail_Id,  bill_details.Product_Id AS Product_ID, bill_details.Quantity AS Quantity, Price, Product_Name, Manufacturer, Created, Batch, products.Quantity AS Total_Quantity, Product_Status FROM bill_details
 JOIN products ON bill_details.Product_Id = products.Product_Id;
 
-DELIMITER //
-CREATE PROCEDURE statitics_by_date(IN billType bit, IN date varchar(10),OUT expense float)
-BEGIN
+//
     SELECT sum(bill_details.Price*bill_details.Quantity) FROM bills
         JOIN bill_details ON bills.Bill_id = bill_details.Bill_Id
     WHERE Bill_Type = true AND Bill_Status = 2
     GROUP BY bills.Created
     HAVING YEAR(bills.Created) = ?
-    ;
-end //
-DELIMITER :

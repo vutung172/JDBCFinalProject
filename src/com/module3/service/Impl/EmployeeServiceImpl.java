@@ -12,7 +12,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.List;
 
-public class EmployeeServiceImpl implements GeneralService<Employee> {
+public class EmployeeServiceImpl implements GeneralService<Employee>,DateTimeFormat {
     private RepositoryImpl<Employee> employeeRepository;
     private RepositoryImpl<Account> accountRepository;
 
@@ -36,7 +36,7 @@ public class EmployeeServiceImpl implements GeneralService<Employee> {
                         employeeListPagination.stream().forEach(e -> System.out.printf(TableForm.employees.column,
                                 e.getEmployeeId(),
                                 e.getEmployeeName(),
-                                e.getDateOfBirth(),
+                                DateTimeFormat.super.dateTransfer(e.getDateOfBirth()),
                                 e.getEmail(),
                                 e.getPhone(),
                                 e.getAddress(),
@@ -90,8 +90,7 @@ public class EmployeeServiceImpl implements GeneralService<Employee> {
                 System.out.println("Mời bạn nhập tên nhân viên: ");
                 employee.setEmployeeName(Console.scanner.nextLine());
                 System.out.println("Ngày tháng năm sinh (dd-mm-yyy): ");
-                SimpleDateFormat simpleDateFormats = new SimpleDateFormat("dd-MM-yyyy");
-                employee.setDateOfBirth(simpleDateFormats.parse(Console.scanner.nextLine()));
+                employee.setDateOfBirth(DateTimeFormat.super.checkerDateFormater(Console.scanner.nextLine()));
                 System.out.println("Mời nhập địa chỉ e-mail: ");
                 employee.setEmail(Console.scanner.nextLine());
                 System.out.println("Mời nhập số điện thoại: ");
@@ -127,7 +126,7 @@ public class EmployeeServiceImpl implements GeneralService<Employee> {
                 String confirm = Console.scanner.nextLine();
                 stop = confirm.contains("y");
             } while (stop);
-        } catch (NumberFormatException | ParseException nfe) {
+        } catch (NumberFormatException nfe) {
             nfe.printStackTrace();
         }
         return null;
@@ -146,7 +145,7 @@ public class EmployeeServiceImpl implements GeneralService<Employee> {
                     System.out.printf(TableForm.employees.column,
                             updateEmployee.getEmployeeId(),
                             updateEmployee.getEmployeeName(),
-                            updateEmployee.getDateOfBirth(),
+                            DateTimeFormat.super.dateTransfer(updateEmployee.getDateOfBirth()),
                             updateEmployee.getEmail(),
                             updateEmployee.getPhone(),
                             updateEmployee.getAddress(),
@@ -155,8 +154,7 @@ public class EmployeeServiceImpl implements GeneralService<Employee> {
                     System.out.println("Cập nhật tên nhân viên: ");
                     updateEmployee.setEmployeeName(Console.scanner.nextLine());
                     System.out.println("Cập nhật ngày tháng năm sinh (dd-mm-yyy): ");
-                    SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd-mm-yyyy");
-                    updateEmployee.setDateOfBirth(simpleDateFormat.parse(Console.scanner.nextLine()));
+                    updateEmployee.setDateOfBirth(DateTimeFormat.super.checkerDateFormater(Console.scanner.nextLine()));
                     System.out.println("Cập nhật địa chỉ e-mail: ");
                     updateEmployee.setEmail(Console.scanner.nextLine());
                     System.out.println("Cập nhật số điện thoại: ");
@@ -194,7 +192,7 @@ public class EmployeeServiceImpl implements GeneralService<Employee> {
                     System.out.printf(TableForm.employees.column,
                             updateStatusEmployee.getEmployeeId(),
                             updateStatusEmployee.getEmployeeName(),
-                            updateStatusEmployee.getDateOfBirth(),
+                            DateTimeFormat.super.dateTransfer(updateStatusEmployee.getDateOfBirth()),
                             updateStatusEmployee.getEmail(),
                             updateStatusEmployee.getPhone(),
                             updateStatusEmployee.getAddress(),
@@ -221,13 +219,13 @@ public class EmployeeServiceImpl implements GeneralService<Employee> {
                         default:
                     }
                     if (set == 1 || set == 2) {
-                        List<Account> accounts = accountRepository.findEqualByIndexes(Account.class,updateStatusEmployee.getEmployeeId());
+                        List<Account> accounts = accountRepository.findAbsoluteByIndexes(Account.class,updateStatusEmployee.getEmployeeId(),updateStatusEmployee.getEmployeeId());
                         accounts.forEach(a -> {
                             a.setAccountStatus(ConstStatus.AccountStt.BLOCK);
                             accountRepository.edit(a);
                         });
                     } else if (set == 3) {
-                        List<Account> accounts = accountRepository.findEqualByIndexes(Account.class,updateStatusEmployee.getEmployeeId());
+                        List<Account> accounts = accountRepository.findAbsoluteByIndexes(Account.class,updateStatusEmployee.getEmployeeId(),updateStatusEmployee.getEmployeeId());
                         accounts.forEach(a -> {
                             a.setAccountStatus(ConstStatus.AccountStt.ACTIVE);
                             accountRepository.edit(a);
@@ -247,7 +245,7 @@ public class EmployeeServiceImpl implements GeneralService<Employee> {
 
     @Override
     public List<Employee> search(String any) {
-        List<Employee> employeeList = employeeRepository.findByIndexes(Employee.class, any);
+        List<Employee> employeeList = employeeRepository.findRelativeByIndexes(Employee.class, any,any);
         if (!employeeList.isEmpty()) {
             int maxPage = employeeList.size() / 10;
             int choice;
@@ -261,7 +259,7 @@ public class EmployeeServiceImpl implements GeneralService<Employee> {
                         employeeListPagination.forEach(e -> System.out.printf(TableForm.employees.column,
                                 e.getEmployeeId(),
                                 e.getEmployeeName(),
-                                e.getDateOfBirth(),
+                                DateTimeFormat.super.dateTransfer(e.getDateOfBirth()),
                                 e.getEmail(),
                                 e.getPhone(),
                                 e.getAddress(),

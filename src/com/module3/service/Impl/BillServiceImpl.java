@@ -15,6 +15,7 @@ import com.module3.util.Storage.UserStorage;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.sql.Savepoint;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -22,7 +23,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class BillServiceImpl implements BillService<Bill>,Message {
+public class BillServiceImpl implements BillService<Bill>,Message,DateTimeFormat {
     private RepositoryImpl<Bill> billRepository;
     private RepositoryImpl<BillDetail> billDetailRepository;
     private RepositoryImpl<Product> productRepository;
@@ -39,14 +40,14 @@ public class BillServiceImpl implements BillService<Bill>,Message {
 
     @Override
     public List<Bill> listAll(Boolean billType) {
-        List<Bill> billList = billRepository.findAll(Bill.class);
+        List<Bill> billList = billRepository.findAll(Bill.class).stream().filter(b -> b.getBillType().equals(billType)).toList();
         if (!billList.isEmpty()) {
             int maxIndex = billList.size() / 10;
             int choice;
             int index = 1;
             try {
                 do {
-                    List<Bill> updateBill = billRepository.findAllByPagination(Bill.class, index);
+                    List<Bill> updateBill = billRepository.findAllByPagination(Bill.class, index).stream().filter(b -> b.getBillType().equals(billType)).toList();
                     if (!updateBill.isEmpty()) {
                         System.out.printf("Tổng: %s phiếu\n", billList.size());
                         Header.bills();
@@ -55,9 +56,9 @@ public class BillServiceImpl implements BillService<Bill>,Message {
                                 b.getBillCode(),
                                 b.getBillType().equals(BillType.IMPORT) ? "Phiếu nhập" : "Phiếu xuất",
                                 b.getEmployeeIdCreated(),
-                                b.getCreated(),
+                                DateTimeFormat.super.dateTransfer(b.getCreated()),
                                 b.getEmployeeIdAuth(),
-                                b.getAuthDate(),
+                                DateTimeFormat.super.dateTransfer(b.getAuthDate()),
                                 b.getBillStatus().equals(ConstStatus.BillStt.CREATE) ? "Tạo" : b.getBillStatus().equals(ConstStatus.BillStt.APPROVAL) ? "Duyệt" : "Hủy"));
                         System.out.println("1.<<Trang trước | 2.Trang sau>> | 3.<Thoát>");
                         System.out.print(Message.choice);
@@ -134,9 +135,9 @@ public class BillServiceImpl implements BillService<Bill>,Message {
                                 b.getBillCode(),
                                 b.getBillType().equals(BillType.IMPORT) ? "Phiếu nhập" : "Phiếu xuất",
                                 b.getEmployeeIdCreated(),
-                                b.getCreated(),
+                                DateTimeFormat.super.dateTransfer(b.getCreated()),
                                 b.getEmployeeIdAuth(),
-                                b.getAuthDate(),
+                                DateTimeFormat.super.dateTransfer(b.getAuthDate()),
                                 b.getBillStatus().equals(ConstStatus.BillStt.CREATE) ? "Tạo" : b.getBillStatus().equals(ConstStatus.BillStt.APPROVAL) ? "Duyệt" : "Hủy"));
                     } else {
                         Header.bills();
@@ -145,14 +146,12 @@ public class BillServiceImpl implements BillService<Bill>,Message {
                                 b.getBillCode(),
                                 b.getBillType().equals(BillType.IMPORT) ? "Phiếu nhập" : "Phiếu xuất",
                                 b.getEmployeeIdCreated(),
-                                b.getCreated(),
+                                DateTimeFormat.super.dateTransfer(b.getCreated()),
                                 b.getEmployeeIdAuth(),
-                                b.getAuthDate(),
+                                DateTimeFormat.super.dateTransfer(b.getAuthDate()),
                                 b.getBillStatus().equals(ConstStatus.BillStt.CREATE) ? "Tạo" : b.getBillStatus().equals(ConstStatus.BillStt.APPROVAL) ? "Duyệt" : "Hủy"));
                     }
-                    System.out.println(Message.continuous);
-                    String confirm = Console.scanner.nextLine();
-                    stop = !confirm.contains("y");
+                    stop = !Message.super.confirm();
                 }
             }while (!stop);
         }catch (Exception e){
@@ -186,30 +185,24 @@ public class BillServiceImpl implements BillService<Bill>,Message {
                 } while (!stop);
                 bill.setAuthDate(new Date());
                 bill.setBillStatus(ConstStatus.BillStt.CREATE);
-                Bill billSuccess = billRepository.addIgnoreId(bill);
-                if (billSuccess != null) {
+                connection.setSavepoint();
+                if (bill != null) {
                     BillDetail billDetail;
                     do {
-                        billDetail = billDetailService.create(billSuccess);
-                        System.out.println(Message.continuous);
-                        String confirm = Console.scanner.nextLine();
-                        stop = confirm.contains("y");
+                        billDetail = billDetailService.create(bill);
+                        stop = Message.super.confirm();
                     } while (stop);
                     if (billDetail != null) {
-                        if (billRepository.findId(Bill.class, bill.getBillId()) == null) {
-                            billRepository.add(bill);
-                        }
                         connection.commit();
                         return bill;
                     } else {
                         connection.rollback();
                     }
+                } else {
+                    connection.rollback();
                 }
-                System.out.println(Message.continuous);
-                String confirm = Console.scanner.nextLine();
-                stop = confirm.contains("y");
+                stop = Message.super.confirm();
             } while (stop);
-            connection.commit();
         } catch (NumberFormatException | SQLException nfe) {
             nfe.printStackTrace();
         }
@@ -225,20 +218,27 @@ public class BillServiceImpl implements BillService<Bill>,Message {
                 System.out.println("Nhập vào mã phiếu hoặc mã code muốn cập nhật: ");
                 String key = Console.scanner.nextLine();
                 if (permissionType.equals(PermissionType.USER)) {
-                    updateBills = billRepository.findEqualByIndexes(Bill.class, key).stream().filter(b -> b.getEmployeeIdCreated().equals(UserStorage.employeeId)).toList();
+                    updateBills = billRepository.findAbsoluteByIndexes(Bill.class, key, key).stream()
+                            .filter(b -> b.getBillType().equals(billType))
+                            .filter(b -> b.getEmployeeIdCreated().equals(UserStorage.employeeId))
+                            .toList();
                 } else {
-                    updateBills = billRepository.findEqualByIndexes(Bill.class, key);
+                    updateBills = billRepository.findAbsoluteByIndexes(Bill.class, key,key).stream()
+                            .filter(b -> b.getBillType().equals(billType))
+                            .toList();
                 }
                 if (!updateBills.isEmpty()) {
                     Header.bills();
-                    updateBills.stream().filter(b -> b.getBillType().equals(billType) && !b.getBillStatus().equals(ConstStatus.BillStt.APPROVAL)).forEach(b -> System.out.printf(TableForm.bills.column,
+                    updateBills.stream()
+                            .filter(b -> b.getBillType().equals(billType))
+                            .forEach(b -> System.out.printf(TableForm.bills.column,
                             b.getBillId(),
                             b.getBillCode(),
                             b.getBillType().equals(BillType.IMPORT) ? "Phiếu nhập" : "Phiếu xuất",
                             b.getEmployeeIdCreated(),
-                            b.getCreated(),
+                            DateTimeFormat.super.dateTransfer(b.getCreated()),
                             b.getEmployeeIdAuth(),
-                            b.getAuthDate(),
+                            DateTimeFormat.super.dateTransfer(b.getAuthDate()),
                             b.getBillStatus().equals(ConstStatus.BillStt.CREATE) ? "Tạo" : b.getBillStatus().equals(ConstStatus.BillStt.APPROVAL) ? "Duyệt" : "Hủy"));
                     System.out.println("1. Cập nhật phiếu ");
                     System.out.println("2. Cập nhật chi tiết phiếu ");
@@ -247,7 +247,9 @@ public class BillServiceImpl implements BillService<Bill>,Message {
                     System.out.print(Message.choice);
                     int choice = Integer.parseInt(Console.scanner.nextLine());
                     if (updateBills.size() == 1) {
-                        Bill bill = updateBills.stream().findFirst().orElse(null);
+                        Bill bill = updateBills.stream()
+                                .findFirst()
+                                .orElse(null);
                         if (!bill.getBillStatus().equals(ConstStatus.BillStt.APPROVAL)) {
                             switch (choice) {
                                 case 1:
@@ -273,7 +275,11 @@ public class BillServiceImpl implements BillService<Bill>,Message {
                     } else {
                         System.out.println("Nhập mã của phiếu muốn cập nhật: ");
                         long id = Long.parseLong(Console.scanner.nextLine());
-                        Bill bill = updateBills.stream().filter(b -> b.getBillId().equals(id)).findFirst().orElse(null);
+                        Bill bill = updateBills.stream()
+                                .filter(b -> b.getBillId().equals(id))
+                                .filter(b -> b.getBillType().equals(billType))
+                                .findFirst()
+                                .orElse(null);
                         switch (choice) {
                             case 1:
                                 if (bill != null) {
@@ -316,9 +322,7 @@ public class BillServiceImpl implements BillService<Bill>,Message {
                                 WarningMess.choiceFailure();
                         }
                     }
-                    System.out.println(Message.continuous);
-                    String confirm = Console.scanner.nextLine();
-                    stop = confirm.contains("y");
+                    stop = Message.super.confirm();
                 } else {
                     WarningMess.objectNotExist();
                 }
@@ -387,7 +391,9 @@ public class BillServiceImpl implements BillService<Bill>,Message {
     @Override
     public List<Bill> search(Boolean billType,Boolean permissionType, String any) {
         try {
-            List<Bill> billList = billRepository.findByIndexes(Bill.class, any);
+            List<Bill> billList = billRepository.findRelativeByIndexes(Bill.class, any,any).stream()
+                    .filter(b -> b.getBillType().equals(billType))
+                    .toList();
             if (!billList.isEmpty()) {
                 System.out.printf("Tổng: %s tải khoản \n", billList.size());
                 Header.bills();
@@ -396,9 +402,9 @@ public class BillServiceImpl implements BillService<Bill>,Message {
                         b.getBillCode(),
                         b.getBillType().equals(BillType.IMPORT) ? "Phiếu nhập" : "Phiếu xuất",
                         b.getEmployeeIdCreated(),
-                        b.getCreated(),
+                        DateTimeFormat.super.dateTransfer(b.getCreated()),
                         b.getEmployeeIdAuth(),
-                        b.getAuthDate(),
+                        DateTimeFormat.super.dateTransfer(b.getAuthDate()),
                         b.getBillStatus().equals(ConstStatus.BillStt.CREATE) ? "Tạo" : b.getBillStatus().equals(ConstStatus.BillStt.APPROVAL) ? "Duyệt" : "Hủy"));
                 System.out.println("1. Cập nhật | 2. Duyệt phiếu | 3. <Thoát>");
                 System.out.print(Message.choice);
@@ -434,12 +440,14 @@ public class BillServiceImpl implements BillService<Bill>,Message {
             do {
                 System.out.println("Mời bạn nhập mã phiếu hoặc mã code");
                 long billId = Long.parseLong(Console.scanner.nextLine());
-                billList = billRepository.findEqualByIndexes(Bill.class, String.valueOf(billId));
+                billList = billRepository.findAbsoluteByIndexes(Bill.class, String.valueOf(billId),String.valueOf(billId)).stream()
+                        .filter(b -> b.getBillType().equals(billType))
+                        .toList();
                 if (!billList.isEmpty()) {
                     Header.billDetails();
                     for (Bill bill : billList) {
                         if (bill.getBillType().equals(billType)) {
-                            billDetailList = billDetailRepository.findEqualByIndexes(BillDetail.class, String.valueOf(bill.getBillId()));
+                            billDetailList = billDetailRepository.findAbsoluteByIndexes(BillDetail.class, String.valueOf(bill.getBillId()),String.valueOf(bill.getBillId()));
                             billDetailList.stream().forEach(bd -> System.out.printf(TableForm.billDetails.column,
                                     bd.getBillId(),
                                     bd.getBillDetailId(),
@@ -480,17 +488,20 @@ public class BillServiceImpl implements BillService<Bill>,Message {
             do {
                 System.out.println("Nhập vào mã phiếu hoặc mã code muốn duyệt: ");
                 String key = Console.scanner.nextLine();
-                List<Bill> updateBills = billRepository.findEqualByIndexes(Bill.class, key);
+                List<Bill> updateBills = billRepository.findAbsoluteByIndexes(Bill.class, key, key).stream()
+                        .filter(b -> b.getBillType().equals(billType))
+                        .toList();
                 if (!updateBills.isEmpty()) {
+                    System.out.printf("Tổng %s phiếu",updateBills.size());
                     Header.bills();
-                    updateBills.stream().filter(b -> b.getBillType().equals(billType) && !b.getBillStatus().equals(ConstStatus.BillStt.APPROVAL)).forEach(b -> System.out.printf(TableForm.bills.column,
+                    updateBills.stream().filter(b -> b.getBillType().equals(billType)).forEach(b -> System.out.printf(TableForm.bills.column,
                             b.getBillId(),
                             b.getBillCode(),
                             b.getBillType().equals(BillType.IMPORT) ? "Phiếu nhập" : "Phiếu xuất",
                             b.getEmployeeIdCreated(),
-                            b.getCreated(),
+                            DateTimeFormat.super.dateTransfer(b.getCreated()),
                             b.getEmployeeIdAuth(),
-                            b.getAuthDate(),
+                            DateTimeFormat.super.dateTransfer(b.getAuthDate()),
                             b.getBillStatus().equals(ConstStatus.BillStt.CREATE) ? "Tạo" : b.getBillStatus().equals(ConstStatus.BillStt.APPROVAL) ? "Duyệt" : "Hủy"));
                     System.out.println("1. Duyệt phiếu");
                     System.out.println("2. Thoát");

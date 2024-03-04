@@ -34,7 +34,7 @@ public class AccRepositoryImpl implements AccRepository {
             }
             String keysName = keysField.stream().map(f -> colName(f) + " LIKE concat('%',?,'%')").collect(Collectors.joining(" OR "));
             String sql = MessageFormat.format("SELECT * FROM {0} WHERE {1}", View.accToEmp, keysName);
-            System.out.println(sql);
+
             PreparedStatement ps = conn.prepareStatement(sql);
             for (int i = 1; i <= keysField.size(); i++)
                 ps.setObject(i, any);

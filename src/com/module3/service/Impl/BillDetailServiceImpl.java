@@ -49,14 +49,17 @@ public class BillDetailServiceImpl implements BillService<BillDetail> {
             connection.setAutoCommit(false);
             boolean stop = false;
             BillDetail billDetail = new BillDetail();
+            connection.setSavepoint();
+            Product product;
+            int quantity = 0;
             do {
                 System.out.println("Nhập vào mã sản phẩm: ");
                 String productId = Console.scanner.nextLine();
-                Product product = productRepository.findId(Product.class, productId);
+                product = productRepository.findId(Product.class, productId);
                 if (product != null) {
                     billDetail.setProductId(product.getProductId());
                     System.out.println("Nhập vào số lượng: ");
-                    int quantity = Integer.parseInt(Console.scanner.nextLine());
+                    quantity = Integer.parseInt(Console.scanner.nextLine());
                     if (bill.getBillType().equals(BillType.EXPORT)) {
                         if (quantity > product.getQuantity()) {
                             WarningMess.outOfRange();
@@ -74,11 +77,15 @@ public class BillDetailServiceImpl implements BillService<BillDetail> {
             } while (!stop);
             System.out.println("Nhập vào giá: ");
             billDetail.setPrice(Float.parseFloat(Console.scanner.nextLine()));
-            billDetail.setBillId(bill.getBillId());
-            if (billDetailRepository.add(billDetail) != null) {
-                if (billRepository.findId(Bill.class, bill.getBillId()) == null) {
-                    billRepository.add(bill);
-                }
+            Bill bill1 = billRepository.addIgnoreId(bill);
+            billDetail.setBillId(bill1.getBillId());
+            BillDetail billDetailSuccess = billDetailRepository.add(billDetail);
+            if (billDetailSuccess != null) {
+                /*if (billDetailRepository.findAbsoluteByIndexes(BillDetail.class,bill.getBillId(),product.getProductId()).size() != 1){
+                    BillDetail updateBillDetail = billDetailRepository.findId(BillDetail.class,billDetail.getBillDetailId());
+                    updateBillDetail.setQuantity(updateBillDetail.getQuantity()+quantity);
+                    billDetailRepository.edit(updateBillDetail);
+                }*/
                 connection.commit();
                 return billDetail;
             } else {
@@ -111,7 +118,7 @@ public class BillDetailServiceImpl implements BillService<BillDetail> {
                 }
             }
             if (bill != null) {
-                billDetailList = billDetailRepository.findByIndexesInView(BillDetail.class, String.valueOf(bill.getBillId()), View.billToBillDetail);
+                billDetailList = billDetailRepository.findAbsoluteByIndexes(BillDetail.class, String.valueOf(bill.getBillId()),String.valueOf(bill.getBillId()));
                 if (!billDetailList.isEmpty()) {
                     System.out.printf("Tổng: %s chi tiết phiếu \n", billDetailList.size());
                     Header.billDetails();
@@ -172,7 +179,7 @@ public class BillDetailServiceImpl implements BillService<BillDetail> {
     public List<BillDetail> search(Boolean billType,Boolean permissionType, String any) {
         List<BillDetail> billDetails = new ArrayList<>();
         try {
-            billDetails = billDetailRepository.findByIndexes(BillDetail.class, any);
+            billDetails = billDetailRepository.findRelativeByIndexes(BillDetail.class,any,any);
             if (!billDetails.isEmpty()) {
                 System.out.printf("Tổng: %s tải khoản \n", billDetails.size());
                 Header.billDetails();

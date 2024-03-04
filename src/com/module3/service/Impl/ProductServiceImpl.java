@@ -13,7 +13,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Scanner;
 
-public class ProductServiceImpl implements GeneralService<Product> {
+public class ProductServiceImpl implements GeneralService<Product>,DateTimeFormat {
     private RepositoryImpl<Product> productRepository;
 
     public ProductServiceImpl() {
@@ -37,7 +37,7 @@ public class ProductServiceImpl implements GeneralService<Product> {
                                 p.getProductId(),
                                 p.getProductName(),
                                 p.getManufacturer(),
-                                p.getCreated(),
+                                DateTimeFormat.super.dateTransfer(p.getCreated()),
                                 p.getBatch(),
                                 p.getQuantity(),
                                 p.getProductStatus() ? "Hoạt Động" : "Không hoạt động"));
@@ -126,7 +126,7 @@ public class ProductServiceImpl implements GeneralService<Product> {
                             updateProduct.getProductId(),
                             updateProduct.getProductName(),
                             updateProduct.getManufacturer(),
-                            updateProduct.getCreated(),
+                            DateTimeFormat.super.dateTransfer(updateProduct.getCreated()),
                             updateProduct.getBatch(),
                             updateProduct.getQuantity(),
                             updateProduct.getProductStatus().equals(ConstStatus.ProductStt.ACTIVE) ? "Hoạt động" : "Không hoạt động");
@@ -169,7 +169,7 @@ public class ProductServiceImpl implements GeneralService<Product> {
                             updateStatusProduct.getProductId(),
                             updateStatusProduct.getProductName(),
                             updateStatusProduct.getManufacturer(),
-                            updateStatusProduct.getCreated(),
+                            DateTimeFormat.super.dateTransfer(updateStatusProduct.getCreated()),
                             updateStatusProduct.getBatch(),
                             updateStatusProduct.getQuantity(),
                             updateStatusProduct.getProductStatus().equals(ConstStatus.ProductStt.ACTIVE) ? "Hoạt động" : "Không hoạt động");
@@ -203,7 +203,7 @@ public class ProductServiceImpl implements GeneralService<Product> {
 
     @Override
     public List<Product> search(String any) {
-        List<Product> productList = productRepository.findByIndexes(Product.class, any);
+        List<Product> productList = productRepository.findRelativeByIndexes(Product.class, any);
         if (!productList.isEmpty()) {
             int maxPage = productList.size() / 10;
             int choice;
@@ -218,7 +218,7 @@ public class ProductServiceImpl implements GeneralService<Product> {
                                 p.getProductId(),
                                 p.getProductName(),
                                 p.getManufacturer(),
-                                p.getCreated(),
+                                DateTimeFormat.super.dateTransfer(p.getCreated()),
                                 p.getBatch(),
                                 p.getQuantity(),
                                 p.getProductStatus() ? "Hoạt Động" : "Không hoạt động"));

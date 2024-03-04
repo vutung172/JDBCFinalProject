@@ -9,6 +9,7 @@ import com.module3.service.ReportService;
 import com.module3.util.Console;
 
 import javax.sound.midi.MidiFileFormat;
+import java.util.Date;
 
 public class ReportServiceImpl implements ReportService, DateTimeFormat {
     private StatisticRepository statisticRepository;
@@ -30,9 +31,9 @@ public class ReportServiceImpl implements ReportService, DateTimeFormat {
             int choice = Integer.parseInt(Console.scanner.nextLine());
             switch (choice) {
                 case 1:
-                    System.out.println("Nhập ngày cần thống kê (dd-mm-yyyy)");
+                    System.out.println("Nhập ngày cần thống kê (dd-mm-yyy)");
                     String date = Console.scanner.nextLine();
-                    if (DateTimeFormat.super.dateFormater(date).equals(date)) {
+                    if (DateTimeFormat.super.checkerDateFormater(date) != null) {
                         float sum = statisticRepository.statisticByDate(billType, date);
                         System.out.printf("%s ngày %s là : %s \n", billType ? "Chi phí" : "Doanh thu", date, sum);
                     } else {
@@ -68,9 +69,9 @@ public class ReportServiceImpl implements ReportService, DateTimeFormat {
             String startDate = Console.scanner.nextLine();
             System.out.println("Nhập ngày kết thúc cần thống kê (dd-mm-yyyy)");
             String endDate = Console.scanner.nextLine();
-            if (DateTimeFormat.super.dateFormater(startDate).equals(startDate) && DateTimeFormat.super.dateFormater(endDate).equals(endDate)) {
+            if (DateTimeFormat.super.checkerDateFormater(startDate) != null && DateTimeFormat.super.checkerDateFormater(endDate) != null) {
                 float sum = statisticRepository.statisticByPeriod(billType, startDate, endDate);
-                System.out.printf("%s từ ngày %s đến ngày là : %s \n", billType ? "Chi phí" : "Doanh thu", startDate, endDate, sum);
+                System.out.printf("%s từ ngày %s đến ngày %s là : %s \n", billType ? "Chi phí" : "Doanh thu", startDate, endDate, sum);
             } else {
                 WarningMess.dateFormatFailure();
             }
@@ -86,7 +87,7 @@ public class ReportServiceImpl implements ReportService, DateTimeFormat {
             String startDate = Console.scanner.nextLine();
             System.out.println("Nhập ngày kết thúc cần thống kê (dd-mm-yyyy)");
             String endDate = Console.scanner.nextLine();
-            if (DateTimeFormat.super.dateFormater(startDate).equals(startDate) && DateTimeFormat.super.dateFormater(endDate).equals(endDate)) {
+            if (DateTimeFormat.super.checkerDateFormater(startDate) != null && DateTimeFormat.super.checkerDateFormater(endDate) != null) {
                 String productId = statisticRepository.statisticProduct(billType, sortType, startDate, endDate);
                 Product product = productRepository.findId(Product.class, productId);
                 if (product != null) {

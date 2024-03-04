@@ -19,7 +19,7 @@ public class AccountManager implements Manager {
         try{
             do {
                 WarningMess.welcome();
-                System.out.println("******************ACCOUNT MANAGEMENT****************");
+                System.out.println("******************QUẢN LÝ TÀI KHOẢN****************");
                 System.out.println("1. Danh sách tài khoản");
                 System.out.println("2. Tạo tài khoản mới");
                 System.out.println("3. Cập nhật trạng thái tài khoản");
